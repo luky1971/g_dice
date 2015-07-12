@@ -1,0 +1,12 @@
+#include "oplsaa.ff/forcefield.itp"
+#include "tip4p.itp"
+;#include "ions.itp"
+
+[ system ]
+Water in water
+
+[ molecules ]
+; Compound        #mols
+;NA+	     1
+;CL-	     1
+SOL          506
