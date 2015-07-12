@@ -6,3 +6,5 @@ grompp and trjconv are tools of gromacs stored in gromacs-4.5.3/src/tools/
 tools that read xtc and trr files:
 trjconv, g_density, g_angle, g_dih
 
+gmxdump will dump contents of binary file
+ex. gmxdump -f <file>.xtc | less
