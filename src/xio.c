@@ -12,5 +12,5 @@ int main(int argc, char *argv[]) {
 
 	fio = open_xtc(argv[1], "r");
 
-	printf("%s\n", fio->fn);
+	//printf("%s\n", fio->fn);
 }
