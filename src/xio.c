@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include "xtcio.h"
+#include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
 int main(int argc, char *argv[]) {
 	t_fileio *fio = NULL;
