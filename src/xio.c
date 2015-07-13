@@ -1,16 +1,36 @@
 /*
  * Written by Ahnaf Siddiqui.
+ * Copyright (c) 2015, University of South Florida.
  *
- * Link with -lgmx.$(CPU) when compiling.
+ * Requires the gromacs library libgmx. Link it with -lgmx when compiling.
  */
 
 #include <stdio.h>
-#include "/usr/local/gromacs/include/gromacs/xtcio.h"
+#include <stdlib.h>
+#include <string.h>
+#include "xtcio.h"
 
 int main(int argc, char *argv[]) {
-	t_fileio *fio = NULL;
+	t_fileio *input = NULL;
+	t_fileio *output = NULL;
+	int natoms, step;
+	real t, prec;
+	matrix box;
+	rvec *x;
+	gmx_bool b0k;
 
-	fio = open_xtc(argv[1], "r");
+	if(argc < 2) {
+		printf("Must specify a .xtc file for input!\n");
+		return 1;
+	}
 
-	//printf("%s\n", fio->fn);
+	input = open_xtc(argv[1], "rb");
+	output = open_xtc("xout.xtc", "wb");
+	
+	read_first_xtc(input, &natoms, &step, &t, box, &x, &prec, &b0k);
+	write_xtc(output, natoms, step, t, box, x, prec);
+	
+	while(read_next_xtc(input, natoms, &step, &t, box, x, &prec, &b0k)) {
+		write_xtc(output, natoms, step, t, box, x, prec);
+	}
 }
