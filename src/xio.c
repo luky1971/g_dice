@@ -4,12 +4,29 @@
  *
  * Requires the gromacs library libgmx. Link it with -lgmx when compiling.
  * Header xtcio.h usually located in /usr/local/gromacs/include/gromacs/
+ * 
+ * TODO: Check return values of open functions for successful open!
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
+void x_io(char *fn);
+
 int main(int argc, char *argv[]) {
+	char *ext;
+	
+	if(argc < 2) {
+		printf("Must specify a .xtc file for input!\n");
+		return 1;
+	}
+	
+	ext = strchr(argv[1], '.');
+	
+}
+
+void x_io(char *fn) {
 	t_fileio *input = NULL;
 	t_fileio *output = NULL;
 	int natoms, step;
@@ -18,12 +35,8 @@ int main(int argc, char *argv[]) {
 	rvec *x;
 	gmx_bool b0k;
 
-	if(argc < 2) {
-		printf("Must specify a .xtc file for input!\n");
-		return 1;
-	}
-
-	input = open_xtc(argv[1], "rb");
+	
+	input = open_xtc(fn, "rb");
 	output = open_xtc("xout.xtc", "wb");
 	
 	read_first_xtc(input, &natoms, &step, &t, box, &x, &prec, &b0k);
