@@ -19,11 +19,14 @@ int main(int argc, char *argv[]) {
 	
 	if(argc < 2) {
 		printf("Must specify a .xtc file for input!\n");
-		return 1;
+		exit(EXIT_FAILURE);
 	}
 	
 	ext = strchr(argv[1], '.');
 	
+	x_io(argv[1]);
+	
+	return 0;
 }
 
 void x_io(char *fn) {
