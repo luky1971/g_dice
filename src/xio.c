@@ -34,7 +34,6 @@ void x_io(char *fn) {
 	matrix box;
 	rvec *x;
 	gmx_bool b0k;
-
 	
 	input = open_xtc(fn, "rb");
 	output = open_xtc("xout.xtc", "wb");
@@ -44,4 +43,7 @@ void x_io(char *fn) {
 	do {
 		write_xtc(output, natoms, step, t, box, x, prec);
 	} while(read_next_xtc(input, natoms, &step, &t, box, x, &prec, &b0k));
+	
+	close_xtc(input);
+	close_xtc(output);
 }
