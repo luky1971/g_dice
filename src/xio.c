@@ -5,27 +5,48 @@
  * Requires the gromacs library libgmx. Link it with -lgmx when compiling.
  * Header xtcio.h usually located in /usr/local/gromacs/include/gromacs/
  * 
- * TODO: Check return values of open functions for successful open!
+ * TODO: Check if files can be opened!!
  */
 
 #include <stdio.h>
 #include <string.h>
+#include "/usr/local/gromacs/include/gromacs/macros.h"
+#include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
 void x_io(char *fn);
 
 int main(int argc, char *argv[]) {
-	char *ext;
+	const char *desc[] = {
+		"svanalys analyzes trajectory files.",
+		"It takes as input two trajectory files specified by -f1 and -f2,",
+		"and two index files specified by -n1 and -n2.",
+		"svanalys produces a coordinate pdb file specified by -o_atom,",
+		"and two ASCII files specified by -eta_atom and -eta_res."
+	};
 	
-	if(argc < 2) {
-		printf("Must specify a .xtc file for input!\n");
-		exit(EXIT_FAILURE);
+	FILE *out_log;
+	
+	t_filenm fnm[] = {
+		{efTRX, "-f1", "traj1", ffREAD},
+		{efTRX, "-f2", "traj2", ffREAD},
+		{efNDX, "-n1", "index1", ffOPTRD},
+		{efNDX, "-n2", "index2", ffOPTRD},
+		{efPDB, "-o_atom", "eta_atom", ffWRITE},
+		{efDAT, "-eta_atom", "eta_atom", ffWRITE},
+		{efDAT, "-eta_res", "eta_res", ffWRITE}
+	};
+	
+	output_env_t oenv;
+	
+	if( (out_log = fopen("svlog.txt", "w")) == NULL ) {
+		out_log = stdout;
 	}
 	
-	ext = strchr(argv[1], '.');
+	parse_common_args(&argc, argv, 0, 
+		asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	x_io(argv[1]);
-	
+	fclose(out_log);
 	return 0;
 }
 
