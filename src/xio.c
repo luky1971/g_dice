@@ -14,7 +14,7 @@
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
-void x_io(char *fn);
+void x_io(const char *fn);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
@@ -46,11 +46,13 @@ int main(int argc, char *argv[]) {
 	parse_common_args(&argc, argv, 0, 
 		asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
+	x_io(opt2fn("-f1", asize(fnm), fnm));
+	
 	fclose(out_log);
 	return 0;
 }
 
-void x_io(char *fn) {
+void x_io(const char *fn) {
 	t_fileio *input = NULL;
 	t_fileio *output = NULL;
 	int natoms, step;
