@@ -45,6 +45,7 @@
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
+void svanalys(int argc, char *argv[]);
 void analyze(t_fileio *traj1, t_fileio *traj2, t_fileio *ndx1, t_fileio *ndx2, t_fileio *out_pdb, t_fileio *out_coord_dat, t_fileio *out_res_dat);
 void copy_xtc(t_fileio *input);
 void copy_trr(t_fileio *input);

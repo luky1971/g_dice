@@ -1,2 +1,2 @@
 # svanalys
-Compile `xio.c` with `gcc xio.c -L/usr/local/gromacs/lib -lgmx`
+Compile `svanalys.c` with `gcc svanalys.c -L/usr/local/gromacs/lib -lgmx`
