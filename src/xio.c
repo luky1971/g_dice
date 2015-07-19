@@ -32,13 +32,13 @@ int main(int argc, char *argv[]) {
 	t_fileio *pdb_coord = NULL, *dat_coord = NULL, *dat_res = NULL;
 	
 	t_filenm fnm[] = {
-		{efTRX, "-f1", "traj1", ffREAD},
-		{efTRX, "-f2", "traj2", ffREAD},
-		{efNDX, "-n1", "index1", ffOPTRD},
-		{efNDX, "-n2", "index2", ffOPTRD},
-		{efPDB, "-o_atom", "eta_atom", ffWRITE},
-		{efDAT, "-eta_atom", "eta_atom", ffWRITE},
-		{efDAT, "-eta_res", "eta_res", ffWRITE}
+		{efTRX, "-f1", "traj1.xtc", ffREAD},
+		{efTRX, "-f2", "traj2.xtc", ffREAD},
+		{efNDX, "-n1", "index1.ndx", ffOPTRD},
+		{efNDX, "-n2", "index2.ndx", ffOPTRD},
+		{efPDB, "-o_atom", "eta_atom.pdb", ffWRITE},
+		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
+		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
 	
 	output_env_t oenv;
@@ -55,30 +55,21 @@ int main(int argc, char *argv[]) {
 		ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
 	if(opt2bSet("-n2", asize(fnm), fnm))
 		ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
-	if(opt2bSet("-o_atom", asize(fnm), fnm))
-		pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
-	if(opt2bSet("-eta_atom", asize(fnm), fnm))
-		dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
-	if(opt2bSet("-eta_res", asize(fnm), fnm))
-		dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
+	
+	pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
+	dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
+	dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
 	
 	if(traj1 != NULL)
 		copy_xtc(traj1);
 	
-	if(traj1 != NULL)
-		gmx_fio_close(traj1);
-	if(traj2 != NULL)
-		gmx_fio_close(traj2);
-	if(ndx1 != NULL)
-		gmx_fio_close(ndx1);
-	if(ndx2 != NULL)
-		gmx_fio_close(ndx2);
-	if(pdb_coord != NULL)
-		gmx_fio_close(pdb_coord);
-	if(dat_coord != NULL)
-		gmx_fio_close(dat_coord);
-	if(dat_res != NULL)
-		gmx_fio_close(dat_res);
+	if(traj1 != NULL)		gmx_fio_close(traj1);
+	if(traj2 != NULL)		gmx_fio_close(traj2);
+	if(ndx1 != NULL)		gmx_fio_close(ndx1);
+	if(ndx2 != NULL)		gmx_fio_close(ndx2);
+	if(pdb_coord != NULL)	gmx_fio_close(pdb_coord);
+	if(dat_coord != NULL)	gmx_fio_close(dat_coord);
+	if(dat_res != NULL)		gmx_fio_close(dat_res);
 	fclose(out_log);
 	
 	return 0;
