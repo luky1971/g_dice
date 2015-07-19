@@ -7,6 +7,7 @@
  * 
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "/usr/local/gromacs/include/gromacs/gmxfio.h"
@@ -14,7 +15,8 @@
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
-void x_io(const char *fn);
+void copy_xtc(t_fileio *input);
+void log_print(FILE *f, char const *fmt, ...);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
@@ -41,34 +43,48 @@ int main(int argc, char *argv[]) {
 	
 	output_env_t oenv;
 	
-	if( (out_log = fopen("svlog.txt", "w")) == NULL ) {
-		out_log = stdout;
-	}
+	out_log = fopen("svlog.txt", "w");
 	
 	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
-	traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
-	ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
-	ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
-	pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
-	dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
-	dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
+	if(opt2bSet("-f1", asize(fnm), fnm))
+		traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
+	if(opt2bSet("-f2", asize(fnm), fnm))
+		traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
+	if(opt2bSet("-n1", asize(fnm), fnm))
+		ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
+	if(opt2bSet("-n2", asize(fnm), fnm))
+		ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
+	if(opt2bSet("-o_atom", asize(fnm), fnm))
+		pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
+	if(opt2bSet("-eta_atom", asize(fnm), fnm))
+		dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
+	if(opt2bSet("-eta_res", asize(fnm), fnm))
+		dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
 	
-	gmx_fio_close(traj1);
-	gmx_fio_close(traj2);
-	gmx_fio_close(ndx1);
-	gmx_fio_close(ndx2);
-	gmx_fio_close(pdb_coord);
-	gmx_fio_close(dat_coord);
-	gmx_fio_close(dat_res);
+	if(traj1 != NULL)
+		copy_xtc(traj1);
+	
+	if(traj1 != NULL)
+		gmx_fio_close(traj1);
+	if(traj2 != NULL)
+		gmx_fio_close(traj2);
+	if(ndx1 != NULL)
+		gmx_fio_close(ndx1);
+	if(ndx2 != NULL)
+		gmx_fio_close(ndx2);
+	if(pdb_coord != NULL)
+		gmx_fio_close(pdb_coord);
+	if(dat_coord != NULL)
+		gmx_fio_close(dat_coord);
+	if(dat_res != NULL)
+		gmx_fio_close(dat_res);
 	fclose(out_log);
 	
 	return 0;
 }
 
-void x_io(const char *fn) {
-	t_fileio *input = NULL;
+void copy_xtc(t_fileio *input) {
 	t_fileio *output = NULL;
 	int natoms, step;
 	real t, prec;
@@ -76,8 +92,7 @@ void x_io(const char *fn) {
 	rvec *x;
 	gmx_bool b0k;
 	
-	input = open_xtc(fn, "rb");
-	output = open_xtc("xout.xtc", "wb");
+	output = gmx_fio_open("xout.xtc", "wb");
 	
 	read_first_xtc(input, &natoms, &step, &t, box, &x, &prec, &b0k);
 	
@@ -85,6 +100,17 @@ void x_io(const char *fn) {
 		write_xtc(output, natoms, step, t, box, x, prec);
 	} while(read_next_xtc(input, natoms, &step, &t, box, x, &prec, &b0k));
 	
-	close_xtc(input);
-	close_xtc(output);
+	gmx_fio_close(output);
+}
+
+void log_print(FILE *f, char const *fmt, ...) {
+	va_list arg;
+	va_start(arg, fmt);
+	vprintf(fmt, arg);
+	va_end(arg);
+	if(f != NULL) {
+		va_start(arg, fmt);
+		vfprintf(f, fmt, arg);
+		va_end(arg);
+	}
 }
