@@ -1,10 +1,40 @@
 /*
+ *
+ *                This source code is KINDA part of
+ * 
+ *                 G   R   O   M   A   C   S
+ * 
+ *          GROningen MAchine for Chemical Simulations
+ * 
+ *                        VERSION 4.5.3
+ * Written by David van der Spoel, Erik Lindahl, Berk Hess, and others.
+ * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+ * Copyright (c) 2001-2008, The GROMACS development team,
+ * check out http://www.gromacs.org for more information.
+ 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * If you want to redistribute modifications, please consider that
+ * scientific software is very special. Version control is crucial -
+ * bugs must be traceable. We will be happy to consider code for
+ * inclusion in the official distribution, but derived work must not
+ * be called official GROMACS. Details are found in the README & COPYING
+ * files - if they are missing, get the official version at www.gromacs.org.
+ * 
+ * To help us fund GROMACS development, we humbly ask that you cite
+ * the papers on the package - you can find them in the top README file.
+ * 
+ * For more info, check our website at http://www.gromacs.org
+ * 
+ * And Hey:
+ * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
+
+ * svanalys is a program for analyzing trajectory files produced by GROMACS.
  * Written by Ahnaf Siddiqui.
  * Copyright (c) 2015, University of South Florida.
- *
- * Requires the gromacs library libgmx. Link it with -lgmx when compiling.
- * Header xtcio.h usually located in /usr/local/gromacs/include/gromacs/
- * 
  */
 
 #include <stdarg.h>
@@ -16,6 +46,9 @@
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
 void copy_xtc(t_fileio *input);
+void copy_trr(t_fileio *input);
+void copy_pdb(t_fileio *input);
+void copy_ndx(t_fileio *input);
 void log_print(FILE *f, char const *fmt, ...);
 
 int main(int argc, char *argv[]) {
@@ -75,6 +108,23 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
+/* Prints to both stdout and a given logfile */
+void log_print(FILE *f, char const *fmt, ...) {
+	va_list arg;
+	va_start(arg, fmt);
+	vprintf(fmt, arg);
+	va_end(arg);
+	if(f != NULL) {
+		va_start(arg, fmt);
+		vfprintf(f, fmt, arg);
+		va_end(arg);
+	}
+}
+
+/********************************************************
+ * Copy functions for testing i/o
+ ********************************************************/
+
 void copy_xtc(t_fileio *input) {
 	t_fileio *output = NULL;
 	int natoms, step;
@@ -94,14 +144,14 @@ void copy_xtc(t_fileio *input) {
 	gmx_fio_close(output);
 }
 
-void log_print(FILE *f, char const *fmt, ...) {
-	va_list arg;
-	va_start(arg, fmt);
-	vprintf(fmt, arg);
-	va_end(arg);
-	if(f != NULL) {
-		va_start(arg, fmt);
-		vfprintf(f, fmt, arg);
-		va_end(arg);
-	}
+void copy_trr(t_fileio *input) {
+	//
+}
+
+void copy_pdb(t_fileio *input) {
+	//
+}
+
+void copy_ndx(t_fileio *input) {
+	//
 }
