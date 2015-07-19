@@ -33,7 +33,7 @@
  * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 
  * svanalys is a program for analyzing trajectory files produced by GROMACS.
- * Written by Ahnaf Siddiqui.
+ * Written by Ahnaf Siddiqui and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  */
 
@@ -45,6 +45,7 @@
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
+void analyze(t_fileio *traj1, t_fileio *traj2, t_fileio *ndx1, t_fileio *ndx2, t_fileio *out_pdb, t_fileio *out_coord_dat, t_fileio *out_res_dat);
 void copy_xtc(t_fileio *input);
 void copy_trr(t_fileio *input);
 void copy_pdb(t_fileio *input);
@@ -52,6 +53,11 @@ void copy_ndx(t_fileio *input);
 void log_print(FILE *f, char const *fmt, ...);
 
 int main(int argc, char *argv[]) {
+	svanalys(argc, argv);
+	return 0;
+}
+
+void svanalys(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svanalys analyzes trajectory files.",
 		"It takes as input two trajectory files specified by -f1 and -f2,",
@@ -62,7 +68,7 @@ int main(int argc, char *argv[]) {
 	
 	FILE *out_log;
 	t_fileio *traj1 = NULL, *traj2 = NULL, *ndx1 = NULL, *ndx2 = NULL;
-	t_fileio *pdb_coord = NULL, *dat_coord = NULL, *dat_res = NULL;
+	t_fileio *out_pdb = NULL, *out_coord_dat = NULL, *out_res_dat = NULL;
 	
 	t_filenm fnm[] = {
 		{efTRX, "-f1", "traj1.xtc", ffREAD},
@@ -80,32 +86,30 @@ int main(int argc, char *argv[]) {
 	
 	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	if(opt2bSet("-f1", asize(fnm), fnm))
-		traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
-	if(opt2bSet("-f2", asize(fnm), fnm))
-		traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
-	if(opt2bSet("-n1", asize(fnm), fnm))
-		ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
-	if(opt2bSet("-n2", asize(fnm), fnm))
-		ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
+	traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
+	traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
+	ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
+	ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
+	out_pdb = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
+	out_coord_dat = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
+	out_res_dat = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
+
+	/* Call analysis functions here */
+	analyze(traj1, traj2, ndx1, ndx2, out_pdb, out_coord_dat, out_res_dat);
+	/***/
 	
-	pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
-	dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
-	dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
-	
-	if(traj1 != NULL)
-		copy_xtc(traj1);
-	
-	if(traj1 != NULL)		gmx_fio_close(traj1);
-	if(traj2 != NULL)		gmx_fio_close(traj2);
-	if(ndx1 != NULL)		gmx_fio_close(ndx1);
-	if(ndx2 != NULL)		gmx_fio_close(ndx2);
-	if(pdb_coord != NULL)	gmx_fio_close(pdb_coord);
-	if(dat_coord != NULL)	gmx_fio_close(dat_coord);
-	if(dat_res != NULL)		gmx_fio_close(dat_res);
+	if(traj1 != NULL)			gmx_fio_close(traj1);
+	if(traj2 != NULL)			gmx_fio_close(traj2);
+	if(ndx1 != NULL)			gmx_fio_close(ndx1);
+	if(ndx2 != NULL)			gmx_fio_close(ndx2);
+	if(out_pdb != NULL)			gmx_fio_close(out_pdb);
+	if(out_coord_dat != NULL)	gmx_fio_close(out_coord_dat);
+	if(out_res_dat != NULL)		gmx_fio_close(out_res_dat);
 	fclose(out_log);
-	
-	return 0;
+}
+
+void analyze(t_fileio *traj1, t_fileio *traj2, t_fileio *ndx1, t_fileio *ndx2, t_fileio *out_pdb, t_fileio *out_coord_dat, t_fileio *out_res_dat) {
+	copy_xtc(traj1);
 }
 
 /* Prints to both stdout and a given logfile */
