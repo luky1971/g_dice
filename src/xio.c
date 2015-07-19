@@ -5,11 +5,11 @@
  * Requires the gromacs library libgmx. Link it with -lgmx when compiling.
  * Header xtcio.h usually located in /usr/local/gromacs/include/gromacs/
  * 
- * TODO: Check if files can be opened!!
  */
 
 #include <stdio.h>
 #include <string.h>
+#include "/usr/local/gromacs/include/gromacs/gmxfio.h"
 #include "/usr/local/gromacs/include/gromacs/macros.h"
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
@@ -26,6 +26,8 @@ int main(int argc, char *argv[]) {
 	};
 	
 	FILE *out_log;
+	t_fileio *traj1 = NULL, *traj2 = NULL, *ndx1 = NULL, *ndx2 = NULL;
+	t_fileio *pdb_coord = NULL, *dat_coord = NULL, *dat_res = NULL;
 	
 	t_filenm fnm[] = {
 		{efTRX, "-f1", "traj1", ffREAD},
@@ -43,12 +45,25 @@ int main(int argc, char *argv[]) {
 		out_log = stdout;
 	}
 	
-	parse_common_args(&argc, argv, 0, 
-		asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
+	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	x_io(opt2fn("-f1", asize(fnm), fnm));
+	traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
+	traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
+	ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
+	ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
+	pdb_coord = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
+	dat_coord = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
+	dat_res = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
 	
+	gmx_fio_close(traj1);
+	gmx_fio_close(traj2);
+	gmx_fio_close(ndx1);
+	gmx_fio_close(ndx2);
+	gmx_fio_close(pdb_coord);
+	gmx_fio_close(dat_coord);
+	gmx_fio_close(dat_res);
 	fclose(out_log);
+	
 	return 0;
 }
 
