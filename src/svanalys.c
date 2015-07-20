@@ -40,6 +40,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "/usr/local/gromacs/include/gromacs/confio.h"
 #include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
 #include "/usr/local/gromacs/include/gromacs/gmxfio.h"
 #include "/usr/local/gromacs/include/gromacs/macros.h"
@@ -52,11 +53,11 @@
 void svanalys(int argc, char *argv[]);
 void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, 
 			const char *out_pdb, const char *out_coord_dat, const char *out_res_dat);
-void log_print(FILE *f, char const *fmt, ...);
-void process_traj(const char *name);
+void print_log(FILE *f, char const *fmt, ...);
+void process_traj(const char *in_name, const char *out_pdb);
 void copy_xtc(const char *in_name);
 void copy_trr(const char *in_name);
-void copy_pdb(const char *in_name);
+void copy_pdb(const char *in_name, const char *out_name);
 void copy_ndx(const char *in_name);
 
 static FILE *out_log;
@@ -109,12 +110,26 @@ void svanalys(int argc, char *argv[]) {
 }
 
 void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, const char *out_pdb, const char *out_coord_dat, const char *out_res_dat) {
-	process_traj(traj1);
+	/* Sample analysis code for testing */
+	
+	FILE *coord_dat, *res_dat;
+	
+	process_traj(traj1, out_pdb);
 	copy_ndx(ndx1);
+	
+	coord_dat = fopen(out_coord_dat, "w");
+	res_dat = fopen(out_res_dat, "w");
+	
+	/* Write to output dat files */
+	
+	fclose(coord_dat);
+	fclose(res_dat);
+	
+	/***/
 }
 
 /* Prints to both stdout and a given logfile */
-void log_print(FILE *f, char const *fmt, ...) {
+void print_log(FILE *f, char const *fmt, ...) {
 	va_list arg;
 	va_start(arg, fmt);
 	vprintf(fmt, arg);
@@ -126,23 +141,37 @@ void log_print(FILE *f, char const *fmt, ...) {
 	}
 }
 
+/* Logs and also calls gmx_fatal */
+void log_fatal(FILE *f, int fatal_errno, const char *file, int line, char const *fmt, ...) {
+	va_list arg;
+	if(f != NULL) {
+		va_start(arg, fmt);
+		fprintf(f, "Fatal error in source file %s line %d:\n", file, line);
+		vfprintf(f, fmt, arg);
+		va_end(arg);
+	}
+	va_start(arg, fmt);
+	gmx_fatal(fatal_errno, file, line, fmt, arg);
+	va_end(arg);
+}
+
 /********************************************************
  * Test functions
  ********************************************************/
 
-void process_traj(const char *name) {
-	switch(fn2ftp(name)) {
+void process_traj(const char *in_name, const char *out_pdb) {
+	switch(fn2ftp(in_name)) {
 		case efXTC:
-			copy_xtc(name);
+			copy_xtc(in_name);
 			break;
 		case efTRR:
-			copy_trr(name);
+			copy_trr(in_name);
 			break;
 		case efPDB:
-			copy_pdb(name);
+			copy_pdb(in_name, out_pdb);
 			break;
 		default:
-			gmx_fatal(FARGS, "Input trajectory files must be .xtc, .trr, or .pdb!\n");
+			log_fatal(out_log, FARGS, "Input trajectory files must be .xtc, .trr, or .pdb!\n");
 	}
 }
 
@@ -188,12 +217,33 @@ void copy_trr(const char *in_name) {
 		fwrite_trn(output, header.step, header.t, header.lambda, box, header.natoms, x, v, NULL);
 	} while(fread_trnheader(input, &header, &b0k) && fread_htrn(input, &header, box, x, v, NULL));
 	
+	sfree(box);
+	sfree(x);
+	sfree(v);
 	close_trn(input);
 	close_trn(output);
 }
 
-void copy_pdb(const char *in_name) {
-	//
+void copy_pdb(const char *in_name, const char *out_name) {
+	FILE *in_pdb;
+	char *title;
+	t_atoms atoms;
+	rvec *x;
+	int natoms, ePBC;
+	matrix box;
+	gmx_bool bChange = FALSE;
+	
+	in_pdb = fopen(in_name, "r");
+	get_pdb_coordnum(in_pdb, &natoms);
+	fclose(in_pdb);
+	
+	init_t_atoms(&atoms, natoms, FALSE);
+	snew(x, natoms);
+	
+	read_pdb_conf(in_name, title, &atoms, x, &ePBC, box, bChange, NULL);
+	write_sto_conf(out_name, title, &atoms, x, NULL, ePBC, box);
+	
+	sfree(x);
 }
 
 void copy_ndx(const char *in_name) {
