@@ -40,18 +40,25 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
 #include "/usr/local/gromacs/include/gromacs/gmxfio.h"
 #include "/usr/local/gromacs/include/gromacs/macros.h"
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
+#include "/usr/local/gromacs/include/gromacs/trnio.h"
+#include "/usr/local/gromacs/include/gromacs/typedefs.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
 void svanalys(int argc, char *argv[]);
-void analyze(t_fileio *traj1, t_fileio *traj2, t_fileio *ndx1, t_fileio *ndx2, t_fileio *out_pdb, t_fileio *out_coord_dat, t_fileio *out_res_dat);
-void copy_xtc(t_fileio *input);
-void copy_trr(t_fileio *input);
-void copy_pdb(t_fileio *input);
+void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, 
+			const char *out_pdb, const char *out_coord_dat, const char *out_res_dat);
+void process_traj(const char *name);
+void copy_xtc(const char *name);
+void trx2pdb(const char *name);
+void copy_pdb(const char *name);
 void copy_ndx(t_fileio *input);
 void log_print(FILE *f, char const *fmt, ...);
+
+static FILE *out_log;
 
 int main(int argc, char *argv[]) {
 	svanalys(argc, argv);
@@ -67,9 +74,8 @@ void svanalys(int argc, char *argv[]) {
 		"and two ASCII files specified by -eta_atom and -eta_res."
 	};
 	
-	FILE *out_log;
-	t_fileio *traj1 = NULL, *traj2 = NULL, *ndx1 = NULL, *ndx2 = NULL;
-	t_fileio *out_pdb = NULL, *out_coord_dat = NULL, *out_res_dat = NULL;
+	const char *traj1, *traj2, *ndx1, *ndx2;
+	const char *out_pdb, *out_coord_dat, *out_res_dat;
 	
 	t_filenm fnm[] = {
 		{efTRX, "-f1", "traj1.xtc", ffREAD},
@@ -87,30 +93,24 @@ void svanalys(int argc, char *argv[]) {
 	
 	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	traj1 = gmx_fio_open(opt2fn("-f1", asize(fnm), fnm), "rb");
-	traj2 = gmx_fio_open(opt2fn("-f2", asize(fnm), fnm), "rb");
-	ndx1 = gmx_fio_open(opt2fn("-n1", asize(fnm), fnm), "r");
-	ndx2 = gmx_fio_open(opt2fn("-n2", asize(fnm), fnm), "r");
-	out_pdb = gmx_fio_open(opt2fn("-o_atom", asize(fnm), fnm), "w");
-	out_coord_dat = gmx_fio_open(opt2fn("-eta_atom", asize(fnm), fnm), "w");
-	out_res_dat = gmx_fio_open(opt2fn("-eta_res", asize(fnm), fnm), "w");
+	traj1 = opt2fn("-f1", asize(fnm), fnm);
+	traj2 = opt2fn("-f2", asize(fnm), fnm);
+	ndx1 = opt2fn("-n1", asize(fnm), fnm);
+	ndx2 = opt2fn("-n2", asize(fnm), fnm);
+	out_pdb = opt2fn("-o_atom", asize(fnm), fnm);
+	out_coord_dat = opt2fn("-eta_atom", asize(fnm), fnm);
+	out_res_dat = opt2fn("-eta_res", asize(fnm), fnm);
 
 	/* Call analysis functions here */
 	analyze(traj1, traj2, ndx1, ndx2, out_pdb, out_coord_dat, out_res_dat);
 	/***/
 	
-	if(traj1 != NULL)			gmx_fio_close(traj1);
-	if(traj2 != NULL)			gmx_fio_close(traj2);
-	if(ndx1 != NULL)			gmx_fio_close(ndx1);
-	if(ndx2 != NULL)			gmx_fio_close(ndx2);
-	if(out_pdb != NULL)			gmx_fio_close(out_pdb);
-	if(out_coord_dat != NULL)	gmx_fio_close(out_coord_dat);
-	if(out_res_dat != NULL)		gmx_fio_close(out_res_dat);
 	fclose(out_log);
 }
 
-void analyze(t_fileio *traj1, t_fileio *traj2, t_fileio *ndx1, t_fileio *ndx2, t_fileio *out_pdb, t_fileio *out_coord_dat, t_fileio *out_res_dat) {
-	copy_xtc(traj1);
+void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, const char *out_pdb, const char *out_coord_dat, const char *out_res_dat) {
+	process_traj(traj1);
+	copy_ndx(ndx1);
 }
 
 /* Prints to both stdout and a given logfile */
@@ -127,10 +127,25 @@ void log_print(FILE *f, char const *fmt, ...) {
 }
 
 /********************************************************
- * Copy functions for testing i/o
+ * Test functions
  ********************************************************/
 
-void copy_xtc(t_fileio *input) {
+void process_traj(const char *name) {
+	switch(fn2ftp(name)) {
+		case efXTC:
+		case efTRR:
+			trx2pdb(name);
+			break;
+		case efPDB:
+			copy_pdb(name);
+			break;
+		default:
+			gmx_fatal(FARGS, "Input trajectory files must be .xtc, .trr, or .pdb!\n");
+	}
+}
+
+void copy_xtc(const char *name) {
+	t_fileio *input = NULL;
 	t_fileio *output = NULL;
 	int natoms, step;
 	real t, prec;
@@ -138,6 +153,7 @@ void copy_xtc(t_fileio *input) {
 	rvec *x;
 	gmx_bool b0k;
 	
+	input = gmx_fio_open(name, "rb");
 	output = gmx_fio_open("xout.xtc", "wb");
 	
 	read_first_xtc(input, &natoms, &step, &t, box, &x, &prec, &b0k);
@@ -146,14 +162,15 @@ void copy_xtc(t_fileio *input) {
 		write_xtc(output, natoms, step, t, box, x, prec);
 	} while(read_next_xtc(input, natoms, &step, &t, box, x, &prec, &b0k));
 	
+	gmx_fio_close(input);
 	gmx_fio_close(output);
 }
 
-void copy_trr(t_fileio *input) {
+void trx2pdb(const char *name) {
 	//
 }
 
-void copy_pdb(t_fileio *input) {
+void copy_pdb(const char *name) {
 	//
 }
 
