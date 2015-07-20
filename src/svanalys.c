@@ -43,6 +43,7 @@
 #include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
 #include "/usr/local/gromacs/include/gromacs/gmxfio.h"
 #include "/usr/local/gromacs/include/gromacs/macros.h"
+#include "/usr/local/gromacs/include/gromacs/smalloc.h"
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
 #include "/usr/local/gromacs/include/gromacs/trnio.h"
 #include "/usr/local/gromacs/include/gromacs/typedefs.h"
@@ -51,14 +52,15 @@
 void svanalys(int argc, char *argv[]);
 void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, 
 			const char *out_pdb, const char *out_coord_dat, const char *out_res_dat);
-void process_traj(const char *name);
-void copy_xtc(const char *name);
-void trx2pdb(const char *name);
-void copy_pdb(const char *name);
-void copy_ndx(t_fileio *input);
 void log_print(FILE *f, char const *fmt, ...);
+void process_traj(const char *name);
+void copy_xtc(const char *in_name);
+void copy_trr(const char *in_name);
+void copy_pdb(const char *in_name);
+void copy_ndx(const char *in_name);
 
 static FILE *out_log;
+static output_env_t oenv;
 
 int main(int argc, char *argv[]) {
 	svanalys(argc, argv);
@@ -86,8 +88,6 @@ void svanalys(int argc, char *argv[]) {
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
 		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
-	
-	output_env_t oenv;
 	
 	out_log = fopen("svlog.txt", "w");
 	
@@ -133,8 +133,10 @@ void log_print(FILE *f, char const *fmt, ...) {
 void process_traj(const char *name) {
 	switch(fn2ftp(name)) {
 		case efXTC:
+			copy_xtc(name);
+			break;
 		case efTRR:
-			trx2pdb(name);
+			copy_trr(name);
 			break;
 		case efPDB:
 			copy_pdb(name);
@@ -144,16 +146,15 @@ void process_traj(const char *name) {
 	}
 }
 
-void copy_xtc(const char *name) {
-	t_fileio *input = NULL;
-	t_fileio *output = NULL;
+void copy_xtc(const char *in_name) {
+	t_fileio *input = NULL, *output = NULL;
 	int natoms, step;
 	real t, prec;
 	matrix box;
 	rvec *x;
 	gmx_bool b0k;
 	
-	input = gmx_fio_open(name, "rb");
+	input = gmx_fio_open(in_name, "rb");
 	output = gmx_fio_open("xout.xtc", "wb");
 	
 	read_first_xtc(input, &natoms, &step, &t, box, &x, &prec, &b0k);
@@ -166,14 +167,35 @@ void copy_xtc(const char *name) {
 	gmx_fio_close(output);
 }
 
-void trx2pdb(const char *name) {
+void copy_trr(const char *in_name) {
+	t_fileio *input = NULL, *output = NULL;
+	t_trnheader header;
+	rvec *box, *x, *v;
+	gmx_bool b0k;
+	
+	input = open_trn(in_name, "rb");
+	output = open_trn("trout.trr", "wb");
+	
+	fread_trnheader(input, &header, &b0k);
+	
+	snew(box, header.box_size);
+	snew(x, header.natoms);
+	snew(v, header.natoms);
+	
+	fread_htrn(input, &header, box, x, v, NULL);
+	
+	do {
+		fwrite_trn(output, header.step, header.t, header.lambda, box, header.natoms, x, v, NULL);
+	} while(fread_trnheader(input, &header, &b0k) && fread_htrn(input, &header, box, x, v, NULL));
+	
+	close_trn(input);
+	close_trn(output);
+}
+
+void copy_pdb(const char *in_name) {
 	//
 }
 
-void copy_pdb(const char *name) {
-	//
-}
-
-void copy_ndx(t_fileio *input) {
+void copy_ndx(const char *in_name) {
 	//
 }
