@@ -51,17 +51,19 @@
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
 void svanalys(int argc, char *argv[]);
-void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, 
-			const char *out_pdb, const char *out_coord_dat, const char *out_res_dat);
-void print_log(FILE *f, char const *fmt, ...);
+void analyze(const char *fnames[]);
 void process_traj(const char *in_name, const char *out_pdb);
 void copy_xtc(const char *in_name);
 void copy_trr(const char *in_name);
 void copy_pdb(const char *in_name, const char *out_name);
 void copy_ndx(const char *in_name);
+void print_log(char const *fmt, ...);
+void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 
-static FILE *out_log;
-static output_env_t oenv;
+enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, NUMFILES};
+
+static FILE *out_log = NULL;
+static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
 	svanalys(argc, argv);
@@ -77,8 +79,14 @@ void svanalys(int argc, char *argv[]) {
 		"and two ASCII files specified by -eta_atom and -eta_res."
 	};
 	
-	const char *traj1, *traj2, *ndx1, *ndx2;
-	const char *out_pdb, *out_coord_dat, *out_res_dat;
+	const char *fnames[NUMFILES];
+	
+	out_log = fopen("svlog.txt", "a");
+	
+	time_t t = time(NULL);
+	struct tm *ltime = localtime(&t);
+	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", argv[0], ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900,
+		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 	
 	t_filenm fnm[] = {
 		{efTRX, "-f1", "traj1.xtc", ffREAD},
@@ -90,35 +98,33 @@ void svanalys(int argc, char *argv[]) {
 		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
 	
-	out_log = fopen("svlog.txt", "w");
-	
 	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
 	
-	traj1 = opt2fn("-f1", asize(fnm), fnm);
-	traj2 = opt2fn("-f2", asize(fnm), fnm);
-	ndx1 = opt2fn("-n1", asize(fnm), fnm);
-	ndx2 = opt2fn("-n2", asize(fnm), fnm);
-	out_pdb = opt2fn("-o_atom", asize(fnm), fnm);
-	out_coord_dat = opt2fn("-eta_atom", asize(fnm), fnm);
-	out_res_dat = opt2fn("-eta_res", asize(fnm), fnm);
+	fnames[TRAJ1] = opt2fn("-f1", asize(fnm), fnm);
+	fnames[TRAJ2] = opt2fn("-f2", asize(fnm), fnm);
+	fnames[NDX1] = opt2fn("-n1", asize(fnm), fnm);
+	fnames[NDX2] = opt2fn("-n2", asize(fnm), fnm);
+	fnames[COORD_PDB] = opt2fn("-o_atom", asize(fnm), fnm);
+	fnames[COORD_DAT] = opt2fn("-eta_atom", asize(fnm), fnm);
+	fnames[RES_DAT] = opt2fn("-eta_res", asize(fnm), fnm); 
 
 	/* Call analysis functions here */
-	analyze(traj1, traj2, ndx1, ndx2, out_pdb, out_coord_dat, out_res_dat);
+	analyze(fnames);
 	/***/
 	
 	fclose(out_log);
 }
 
-void analyze(const char *traj1, const char *traj2, const char *ndx1, const char *ndx2, const char *out_pdb, const char *out_coord_dat, const char *out_res_dat) {
+void analyze(const char *fnames[]) {
 	/* Sample analysis code for testing */
 	
 	FILE *coord_dat, *res_dat;
 	
-	process_traj(traj1, out_pdb);
-	copy_ndx(ndx1);
+	process_traj(fnames[TRAJ1], fnames[COORD_PDB]);
+	copy_ndx(fnames[NDX1]);
 	
-	coord_dat = fopen(out_coord_dat, "w");
-	res_dat = fopen(out_res_dat, "w");
+	coord_dat = fopen(fnames[COORD_DAT], "w");
+	res_dat = fopen(fnames[RES_DAT], "w");
 	
 	/* Write to output dat files */
 	
@@ -126,33 +132,6 @@ void analyze(const char *traj1, const char *traj2, const char *ndx1, const char 
 	fclose(res_dat);
 	
 	/***/
-}
-
-/* Prints to both stdout and a given logfile */
-void print_log(FILE *f, char const *fmt, ...) {
-	va_list arg;
-	va_start(arg, fmt);
-	vprintf(fmt, arg);
-	va_end(arg);
-	if(f != NULL) {
-		va_start(arg, fmt);
-		vfprintf(f, fmt, arg);
-		va_end(arg);
-	}
-}
-
-/* Logs and also calls gmx_fatal */
-void log_fatal(FILE *f, int fatal_errno, const char *file, int line, char const *fmt, ...) {
-	va_list arg;
-	if(f != NULL) {
-		va_start(arg, fmt);
-		fprintf(f, "Fatal error in source file %s line %d:\n", file, line);
-		vfprintf(f, fmt, arg);
-		va_end(arg);
-	}
-	va_start(arg, fmt);
-	gmx_fatal(fatal_errno, file, line, fmt, arg);
-	va_end(arg);
 }
 
 /********************************************************
@@ -171,7 +150,7 @@ void process_traj(const char *in_name, const char *out_pdb) {
 			copy_pdb(in_name, out_pdb);
 			break;
 		default:
-			log_fatal(out_log, FARGS, "Input trajectory files must be .xtc, .trr, or .pdb!\n");
+			log_fatal(FARGS, "Input trajectory files must be .xtc, .trr, or .pdb!\n");
 	}
 }
 
@@ -248,4 +227,35 @@ void copy_pdb(const char *in_name, const char *out_name) {
 
 void copy_ndx(const char *in_name) {
 	//
+}
+
+/********************************************************
+ * Logging functions
+ ********************************************************/
+
+/* Prints to both stdout and the logfile */
+void print_log(char const *fmt, ...) {
+	va_list arg;
+	va_start(arg, fmt);
+	vprintf(fmt, arg);
+	va_end(arg);
+	if(out_log != NULL) {
+		va_start(arg, fmt);
+		vfprintf(out_log, fmt, arg);
+		va_end(arg);
+	}
+}
+
+/* Logs and also calls gmx_fatal */
+void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
+	va_list arg;
+	if(out_log != NULL) {
+		va_start(arg, fmt);
+		fprintf(out_log, "Fatal error in source file %s line %d: ", file, line);
+		vfprintf(out_log, fmt, arg);
+		va_end(arg);
+	}
+	va_start(arg, fmt);
+	gmx_fatal(fatal_errno, file, line, fmt, arg);
+	va_end(arg);
 }
