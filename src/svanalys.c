@@ -43,6 +43,7 @@
 #include "/usr/local/gromacs/include/gromacs/confio.h"
 #include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
 #include "/usr/local/gromacs/include/gromacs/gmxfio.h"
+#include "/usr/local/gromacs/include/gromacs/index.h"
 #include "/usr/local/gromacs/include/gromacs/macros.h"
 #include "/usr/local/gromacs/include/gromacs/smalloc.h"
 #include "/usr/local/gromacs/include/gromacs/statutil.h"
@@ -50,17 +51,20 @@
 #include "/usr/local/gromacs/include/gromacs/typedefs.h"
 #include "/usr/local/gromacs/include/gromacs/xtcio.h"
 
+#define INDXGRPS 1
+
+enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, NUMFILES};
+
 void svanalys(int argc, char *argv[]);
 void analyze(const char *fnames[]);
 void process_traj(const char *in_name, const char *out_pdb);
 void copy_xtc(const char *in_name);
 void copy_trr(const char *in_name);
 void copy_pdb(const char *in_name, const char *out_name);
-void copy_ndx(const char *in_name);
+void copy_ndx(const char *in_name, int num_groups);
 void print_log(char const *fmt, ...);
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 
-enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, NUMFILES};
 
 static FILE *out_log = NULL;
 static output_env_t oenv = NULL;
@@ -115,13 +119,17 @@ void svanalys(int argc, char *argv[]) {
 	fclose(out_log);
 }
 
+/********************************************************
+ * Test functions
+ ********************************************************/
+
 void analyze(const char *fnames[]) {
 	/* Sample analysis code for testing */
 	
 	FILE *coord_dat, *res_dat;
 	
 	process_traj(fnames[TRAJ1], fnames[COORD_PDB]);
-	copy_ndx(fnames[NDX1]);
+	copy_ndx(fnames[NDX1], INDXGRPS);
 	
 	coord_dat = fopen(fnames[COORD_DAT], "w");
 	res_dat = fopen(fnames[RES_DAT], "w");
@@ -133,10 +141,6 @@ void analyze(const char *fnames[]) {
 	
 	/***/
 }
-
-/********************************************************
- * Test functions
- ********************************************************/
 
 void process_traj(const char *in_name, const char *out_pdb) {
 	switch(fn2ftp(in_name)) {
@@ -225,8 +229,30 @@ void copy_pdb(const char *in_name, const char *out_name) {
 	sfree(x);
 }
 
-void copy_ndx(const char *in_name) {
-	//
+void copy_ndx(const char *in_name, int num_groups) {
+	int *isize;
+	atom_id **indx;
+	char **grp_names;
+	t_blocka *blk;
+	int i;
+	
+	snew(isize, num_groups);
+	snew(indx, num_groups);
+	snew(grp_names, num_groups);
+	
+	rd_index((char*)in_name, num_groups, isize, indx, grp_names);
+	
+	blk = new_blocka();
+	
+	for(i = 0; i < num_groups; i++) {
+		add_grp(blk, &grp_names, isize[i], indx[i], grp_names[i]);
+	}
+	
+	write_index("outdex.ndx", blk, grp_names);
+	
+	sfree(isize);
+	sfree(indx);
+	sfree(grp_names);
 }
 
 /********************************************************
