@@ -272,7 +272,10 @@ void print_log(char const *fmt, ...) {
 	}
 }
 
-/* Logs and also calls gmx_fatal */
+/* 
+ * Logs fatal error and also calls gmx_fatal
+ * Hint: Use FARGS for the first 3 arguments.
+ */
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
 	va_list arg;
 	if(out_log != NULL) {
