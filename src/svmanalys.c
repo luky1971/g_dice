@@ -32,7 +32,7 @@
  * And Hey:
  * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 
- * svanalys is a program for analyzing trajectory files produced by GROMACS.
+ * svmanalys is a program for analyzing trajectory files produced by GROMACS.
  * Written by Ahnaf Siddiqui and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  */
@@ -55,7 +55,7 @@
 
 enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, NUMFILES};
 
-void svanalys(int argc, char *argv[]);
+void svmanalys(int argc, char *argv[]);
 void analyze(const char *fnames[]);
 void process_traj(const char *in_name, const char *out_pdb);
 void copy_xtc(const char *in_name);
@@ -70,16 +70,16 @@ static FILE *out_log = NULL;
 static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
-	svanalys(argc, argv);
+	svmanalys(argc, argv);
 	return 0;
 }
 
-void svanalys(int argc, char *argv[]) {
+void svmanalys(int argc, char *argv[]) {
 	const char *desc[] = {
-		"svanalys analyzes trajectory files.",
+		"svmanalys analyzes trajectory files.",
 		"It takes as input two trajectory files specified by -f1 and -f2,",
 		"and two index files specified by -n1 and -n2.",
-		"svanalys produces a coordinate pdb file specified by -o_atom,",
+		"svmanalys produces a coordinate pdb file specified by -o_atom,",
 		"and two ASCII files specified by -eta_atom and -eta_res."
 	};
 	
