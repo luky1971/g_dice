@@ -38,8 +38,11 @@
  */
  
 #include "svmutils.h"
+#include "xtcio.h"
 
 void trajcom(const char *traj_file, const char *index_file);
+void center_of_mass(rvec com, rvec *pos, int natoms, atom_id *indx, int isize);
+void log_results(rvec *com, int n, rvec com_avg);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
@@ -62,7 +65,81 @@ int main(int argc, char *argv[]) {
 }
 
 void trajcom(const char *traj_file, const char *index_file) {
-	//
+	/* Index data */
+	int isize[1];
+	atom_id *indx[1];
+	char *grp_names[1];
+	
+	/* Trajectory data */
+	t_fileio *traj = NULL;
+	int natoms, step;
+	real t, prec;
+	matrix box;
+	rvec *pos;
+	gmx_bool b0k;
+	
+	/* Center of mass data */
+	rvec *com;
+	rvec com_avg;
+	real x_tot, y_tot, z_tot;
+	
+	/* Counts */
+	int num_frames = 0, com_len;
+	
+	/* Read index */
+	rd_index((char*)index_file, 1, isize, indx, grp_names);
+	
+	traj = gmx_fio_open(traj_file, "rb");
+	
+	com_len = 10;
+	snew(com, com_len);
+	
+	read_first_xtc(traj, &natoms, &step, &t, box, &pos, &prec, &b0k);
+	
+	do {
+		num_frames++;
+		if(num_frames > com_len) {
+			com_len += 10;
+			srenew(com, com_len);
+		}
+		center_of_mass(com[num_frames - 1], pos, natoms, indx[0], isize[0]);
+		x_tot += com[num_frames - 1][0];
+		y_tot += com[num_frames - 1][1];
+		z_tot += com[num_frames - 1][2];
+	} while(read_next_xtc(traj, natoms, &step, &t, box, pos, &prec, &b0k));
+	
+	com_avg[0] = x_tot / num_frames;
+	com_avg[1] = y_tot / num_frames;
+	com_avg[2] = z_tot / num_frames;
+	
+	log_results(com, num_frames, com_avg);
+	
+	sfree(com);
+	gmx_fio_close(traj);
 }
- 
- 
+
+void center_of_mass(rvec com, rvec *pos, int natoms, atom_id *indx, int isize) {
+	real x_tot = 0, y_tot = 0, z_tot = 0;
+	int i;
+	
+	for(i = 0; i < isize; i++) {
+		x_tot += pos[indx[i]][0];
+		y_tot += pos[indx[i]][1];
+		z_tot += pos[indx[i]][2];
+	}
+	
+	com[0] = x_tot / isize;
+	com[1] = y_tot / isize;
+	com[2] = z_tot / isize;
+}
+
+void log_results(rvec *com, int n, rvec com_avg) {
+	int i;
+	print_log("\nCenters of mass:\n");
+	for(i = 0; i < n; i++) {
+		print_log("Frame %d: %f %f %f\n", i, com[i][0], com[i][1], com[i][2]);
+	}
+	print_log("Average: %f %f %f\n", com_avg[0], com_avg[1], com_avg[2]);
+	
+	printf("\nResults saved in svmlog.txt\n");
+}
