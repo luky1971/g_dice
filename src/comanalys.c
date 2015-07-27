@@ -39,6 +39,8 @@
  
 #include "svmutils.h"
 
+void trajcom(const char *traj_file, const char *index_file);
+
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"comanalys calculates the center of mass of a given group of particles over the frames in a trajectory.",
@@ -47,10 +49,21 @@ int main(int argc, char *argv[]) {
 		"comanalys produces an ASCII data file."
 	};
 	
-	//
+	const char *fnames[2];
+	int files[] = {TRAJ1, NDX1};
+	
+	init_log(argv[0]);
+	
+	get_file_args(argc, argv, desc, asize(desc), files, fnames, 2);
+	
+	trajcom(fnames[0], fnames[1]);
+	
+	print_log("Done.\n");
+	
+	close_log();
 }
 
-void center_of_mass(const char *traj_file, const char *index_file) {
+void trajcom(const char *traj_file, const char *index_file) {
 	//
 }
  

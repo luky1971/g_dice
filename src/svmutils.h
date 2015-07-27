@@ -41,9 +41,11 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
-#include "/usr/local/gromacs/include/gromacs/statutil.h"
-#include "/usr/local/gromacs/include/gromacs/typedefs.h"
+#include "gmx_fatal.h"
+#include "macros.h"
+#include "smalloc.h"
+#include "statutil.h"
+#include "typedefs.h"
 
 /* Enumeration of input and output files */
 enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
@@ -53,10 +55,10 @@ enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
  * int files[] are the desired files based on files enum defined above
  * Requested file names will be stored in fnames
  */
-void parse_file_args(int argc, char *argv[], char *desc[], int files[], const char *fnames[], int num_files);
+void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files);
 
 /* Opens the logfile and logs initial time/date */
-void init_log(void);
+void init_log(char *program);
 
 /* Closes the logfile */
 void close_log(void);

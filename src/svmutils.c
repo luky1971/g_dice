@@ -46,23 +46,26 @@ static output_env_t oenv = NULL;
  * int files[] are the desired files based on files enum defined in svmutils.h
  * Requested file names will be stored in fnames
  */
-void parse_file_args(int argc, char *argv[], char *desc[], int files[], const char *fnames[], int num_files) {
+void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files) {
 	int filetypes[] = {efTRX, efTRX, efNDX, efNDX, efPDB, efDAT, efDAT};
 	const char *options[] = {"-f1", "-f2", "-n1", "-n2", "-o_atom", "-eta_atom", "-eta_res"};
 	const char *def_names[] = {"traj1.xtc", "traj2.xtc", "index1.ndx", "index2.ndx", "eta_atom.pdb", "eta_atom.dat", "eta_res.dat"};
-	int modes[] = {ffREAD, ffREAD, ffOPTRD, ffOPTRD, ffWRITE, ffWRITE, ffWRITE};
+	unsigned long modes[] = {ffREAD, ffREAD, ffOPTRD, ffOPTRD, ffWRITE, ffWRITE, ffWRITE};
 	int i;
 	t_filenm *fnm;
 	
 	snew(fnm, num_files);
 	
 	for(i = 0; i < num_files; i++) {
-		fnm[i] = {filetypes[files[i]], options[files[i]], def_names[files[i]], modes[files[i]]};
+		fnm[i].ftp = filetypes[files[i]];
+		fnm[i].opt = options[files[i]];
+		fnm[i].fn = def_names[files[i]];
+		fnm[i].flag = modes[files[i]];
 	}
+
+	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, desc_size, desc, 0, NULL, &oenv);
 	
-	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
-	
-	for(i = 0; i < num_files; i++ {
+	for(i = 0; i < num_files; i++) {
 		fnames[i] = opt2fn(options[files[i]], asize(fnm), fnm);
 	}
 	
@@ -70,12 +73,12 @@ void parse_file_args(int argc, char *argv[], char *desc[], int files[], const ch
 }
 
 /* Opens the logfile and logs initial time/date */
-void init_log(void) {
+void init_log(char *program) {
 	out_log = fopen("svmlog.txt", "a");
 	
 	time_t t = time(NULL);
 	struct tm *ltime = localtime(&t);
-	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", argv[0], ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", program, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
 
 /* Closes the logfile */

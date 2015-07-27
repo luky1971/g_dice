@@ -1,2 +1,2 @@
-# svanalys
-Compile `svanalys.c` with `gcc svanalys.c -L/usr/local/gromacs/lib -lgmx`
+# svmanalys
+Compile `svmanalys.c` with `gcc svmanalys.c -L/usr/local/gromacs/lib -lgmx`

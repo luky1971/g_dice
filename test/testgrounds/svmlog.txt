@@ -1,0 +1,23 @@
+
+./comanalys run: 7-26-2015 19:13:33
+Done.
+./comanalys run: 7-26-2015 19:15:0
+Done.
+
+./comanalys run: 7-26-2015 19:17:9
+-f1
+traj1.xtc
+Done.
+
+./comanalys run: 7-26-2015 19:17:53
+-f1
+traj1.xtc
+
+./comanalys run: 7-26-2015 19:18:41
+-f1
+traj1.xtc
+
+./comanalys run: 7-26-2015 19:18:52
+2
+2
+Done.

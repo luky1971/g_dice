@@ -37,44 +37,29 @@
  * Copyright (c) 2015, University of South Florida.
  */
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "/usr/local/gromacs/include/gromacs/confio.h"
-#include "/usr/local/gromacs/include/gromacs/gmx_fatal.h"
-#include "/usr/local/gromacs/include/gromacs/gmxfio.h"
-#include "/usr/local/gromacs/include/gromacs/index.h"
-#include "/usr/local/gromacs/include/gromacs/macros.h"
-#include "/usr/local/gromacs/include/gromacs/smalloc.h"
-#include "/usr/local/gromacs/include/gromacs/statutil.h"
-#include "/usr/local/gromacs/include/gromacs/trnio.h"
-#include "/usr/local/gromacs/include/gromacs/typedefs.h"
-#include "/usr/local/gromacs/include/gromacs/xtcio.h"
+#include "confio.h"
+#include "gmxfio.h"
+#include "index.h"
+#include "macros.h"
+#include "smalloc.h"
+#include "statutil.h"
+#include "svmutils.h"
+#include "trnio.h"
+#include "typedefs.h"
+#include "xtcio.h"
 
 #define INDXGRPS 1
 
-enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, NUMFILES};
-
-void svmanalys(int argc, char *argv[]);
 void analyze(const char *fnames[]);
 void process_traj(const char *in_name, const char *out_pdb);
 void copy_xtc(const char *in_name);
 void copy_trr(const char *in_name);
 void copy_pdb(const char *in_name, const char *out_name);
 void copy_ndx(const char *in_name, int num_groups);
-void print_log(char const *fmt, ...);
-void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
-
-
-static FILE *out_log = NULL;
-static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
-	svmanalys(argc, argv);
-	return 0;
-}
-
-void svmanalys(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svmanalys analyzes trajectory files.",
 		"It takes as input two trajectory files specified by -f1 and -f2,",
@@ -82,41 +67,7 @@ void svmanalys(int argc, char *argv[]) {
 		"svmanalys produces a coordinate pdb file specified by -o_atom,",
 		"and two ASCII files specified by -eta_atom and -eta_res."
 	};
-	
-	const char *fnames[NUMFILES];
-	
-	out_log = fopen("svlog.txt", "a");
-	
-	time_t t = time(NULL);
-	struct tm *ltime = localtime(&t);
-	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", argv[0], ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900,
-		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
-	
-	t_filenm fnm[] = {
-		{efTRX, "-f1", "traj1.xtc", ffREAD},
-		{efTRX, "-f2", "traj2.xtc", ffREAD},
-		{efNDX, "-n1", "index1.ndx", ffOPTRD},
-		{efNDX, "-n2", "index2.ndx", ffOPTRD},
-		{efPDB, "-o_atom", "eta_atom.pdb", ffWRITE},
-		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
-		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
-	};
-	
-	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, asize(desc), desc, 0, NULL, &oenv);
-	
-	fnames[TRAJ1] = opt2fn("-f1", asize(fnm), fnm);
-	fnames[TRAJ2] = opt2fn("-f2", asize(fnm), fnm);
-	fnames[NDX1] = opt2fn("-n1", asize(fnm), fnm);
-	fnames[NDX2] = opt2fn("-n2", asize(fnm), fnm);
-	fnames[COORD_PDB] = opt2fn("-o_atom", asize(fnm), fnm);
-	fnames[COORD_DAT] = opt2fn("-eta_atom", asize(fnm), fnm);
-	fnames[RES_DAT] = opt2fn("-eta_res", asize(fnm), fnm); 
-
-	/* Call analysis functions here */
-	analyze(fnames);
-	/***/
-	
-	fclose(out_log);
+	return 0;
 }
 
 /********************************************************
@@ -253,38 +204,4 @@ void copy_ndx(const char *in_name, int num_groups) {
 	sfree(isize);
 	sfree(indx);
 	sfree(grp_names);
-}
-
-/********************************************************
- * Logging functions
- ********************************************************/
-
-/* Prints to both stdout and the logfile */
-void print_log(char const *fmt, ...) {
-	va_list arg;
-	va_start(arg, fmt);
-	vprintf(fmt, arg);
-	va_end(arg);
-	if(out_log != NULL) {
-		va_start(arg, fmt);
-		vfprintf(out_log, fmt, arg);
-		va_end(arg);
-	}
-}
-
-/* 
- * Logs fatal error and also calls gmx_fatal
- * Hint: Use FARGS for the first 3 arguments.
- */
-void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
-	va_list arg;
-	if(out_log != NULL) {
-		va_start(arg, fmt);
-		fprintf(out_log, "Fatal error in source file %s line %d: ", file, line);
-		vfprintf(out_log, fmt, arg);
-		va_end(arg);
-	}
-	va_start(arg, fmt);
-	gmx_fatal(fatal_errno, file, line, fmt, arg);
-	va_end(arg);
 }

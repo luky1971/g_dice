@@ -1,0 +1,49 @@
+
+./svanalys run: 7-20-2015 17:57:1
+Fatal error in source file svanalys.c line 153: Input trajectory files must be .xtc, .trr, or .pdb!
+
+./svanalys run: 7-20-2015 18:35:35
+
+./svanalys run: 7-20-2015 18:37:15
+
+./svanalys run: 7-20-2015 18:43:2
+
+./svanalys run: 7-20-2015 18:43:27
+
+./svanalys run: 7-20-2015 18:56:1
+
+./svanalys run: 7-20-2015 19:17:37
+
+./svanalys run: 7-20-2015 19:18:15
+
+./svanalys run: 7-20-2015 19:21:50
+
+./svanalys run: 7-20-2015 19:24:12
+
+./svanalys run: 7-20-2015 19:32:15
+
+./svanalys run: 7-20-2015 19:32:51
+
+./svanalys run: 7-20-2015 19:33:19
+
+./svanalys run: 7-20-2015 19:34:53
+
+./svanalys run: 7-20-2015 19:39:56
+
+./svanalys run: 7-20-2015 19:41:33
+
+./svanalys run: 7-20-2015 19:44:9
+
+./svanalys run: 7-20-2015 19:45:12
+
+./svanalys run: 7-20-2015 19:46:48
+
+./svanalys run: 7-20-2015 19:48:39
+
+./svanalys run: 7-20-2015 19:49:17
+
+./svanalys run: 7-20-2015 19:50:57
+
+./svanalys run: 7-20-2015 20:4:20
+
+./svanalys run: 7-20-2015 20:7:8
