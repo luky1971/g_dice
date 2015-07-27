@@ -57,9 +57,7 @@ int main(int argc, char *argv[]) {
 	get_file_args(argc, argv, desc, asize(desc), files, fnames, 2);
 	
 	trajcom(fnames[0], fnames[1]);
-	
-	print_log("Done.\n");
-	
+		
 	close_log();
 }
 

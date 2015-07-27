@@ -63,12 +63,12 @@ void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, in
 		fnm[i].flag = modes[files[i]];
 	}
 
-	parse_common_args(&argc, argv, 0, asize(fnm), fnm, 0, NULL, desc_size, desc, 0, NULL, &oenv);
+	parse_common_args(&argc, argv, 0, num_files, fnm, 0, NULL, desc_size, desc, 0, NULL, &oenv);
 	
 	for(i = 0; i < num_files; i++) {
-		fnames[i] = opt2fn(options[files[i]], asize(fnm), fnm);
+		fnames[i] = opt2fn(options[files[i]], num_files, fnm);
 	}
-	
+
 	sfree(fnm);
 }
 
