@@ -52,12 +52,13 @@ int main(int argc, char *argv[]) {
 		"comanalys produces an ASCII data file."
 	};
 	
-	const char *fnames[2];
+#define NUMFILES 2
+	const char *fnames[NUMFILES];
 	int files[] = {TRAJ1, NDX1};
 	
 	init_log(argv[0]);
 	
-	get_file_args(argc, argv, desc, asize(desc), files, fnames, 2);
+	get_file_args(argc, argv, desc, asize(desc), files, fnames, NUMFILES);
 	
 	trajcom(fnames[0], fnames[1]);
 		
@@ -81,7 +82,7 @@ void trajcom(const char *traj_file, const char *index_file) {
 	/* Center of mass data */
 	rvec *com;
 	rvec com_avg;
-	real x_tot, y_tot, z_tot;
+	real x_tot = 0, y_tot = 0, z_tot = 0;
 	
 	/* Counts */
 	int num_frames = 0, com_len;
