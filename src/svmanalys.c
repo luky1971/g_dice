@@ -37,6 +37,7 @@
  * Copyright (c) 2015, University of South Florida.
  */
 
+#include "svm.h"
 #include "svmutils.h"
 #include "xtcio.h"
 
