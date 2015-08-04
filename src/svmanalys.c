@@ -41,7 +41,10 @@
 #include "svmutils.h"
 #include "xtcio.h"
 
-void order_xtc(const char *traj_file);
+#define FRAMESTEP 1000 // The number of new elements to reallocate by when expanding an array of length # of trajectory frames
+#define NUMNODE 4 // The number of svm_nodes per training vector (4 = 3 xyz pos + 1 for -1 index)
+
+void traj2svmprob(const char *traj_file);
 void print_traj(rvec **pos, int nframes, int natoms);
 
 int main(int argc, char *argv[]) {
@@ -50,54 +53,75 @@ int main(int argc, char *argv[]) {
 		"using support vector machine algorithms."
 	};
 	
-#define NUMFILES 1
-	const char *fnames[NUMFILES];
+	const char *fnames[1];
 	int files[] = {TRAJ1};
 	init_log(argv[0]);
 	
 	get_file_args(argc, argv, desc, asize(desc), files, fnames, NUMFILES);
 	
-	order_xtc(fnames[0]);
+	traj2svmprob(fnames[0]);
 
 	close_log();
 }
 
-void order_xtc(const char *traj_file) {
-	/* Reordered trajectory: row (outer array index) = atom index, column (inner array index) = frame */
-	//rvec **ord_pos;
-#define FRAMESTEP 1000
+void traj2svmprob(const char *traj_file) {
+	/* Reordered svm-training trajectory data: 3Darray[atom #][frame #][position component] */
+	svm_node ***train_vectors;
+
 	/* Trajectory data */
 	t_fileio *traj = NULL;
-	int natoms, step, num_frames = 0, est_frames = FRAMESTEP;
+	int natoms, step;
 	real t, prec;
 	matrix box;
-	rvec **pos;
+	rvec *pos;
 	gmx_bool b0k;
-	
+	int num_frames = 0, est_frames = FRAMESTEP, cur_atom, cur_frame;
+
+	/* Open trajectory file and get initial data */
 	traj = gmx_fio_open(traj_file, "rb");
-	
-	snew(pos, est_frames);
-	
-	read_first_xtc(traj, &natoms, &step, &t, box, pos, &prec, &b0k);
+	read_first_xtc(traj, &natoms, &step, &t, box, &pos, &prec, &b0k);
+
+	/* Allocate memory for training vectors */
+	snew(train_vectors, natoms);
+	for (cur_atom = 0; cur_atom < natoms; ++cur_atom)
+	{
+		snew(train_vectors[cur_atom], est_frames);
+	}
 		
+	/** Read and simultaneously reorder trajectory data into svm training format */ 
+	gmx_bool renew = FALSE;
 	do {
+		cur_frame = num_frames;
 		num_frames++;
 		if(num_frames + 1 > est_frames) {
 			est_frames += FRAMESTEP;
-			srenew(pos, est_frames);
+			renew = TRUE;
 		}
-		snew(pos[num_frames], natoms);
-	} while(read_next_xtc(traj, natoms, &step, &t, box, pos[num_frames], &prec, &b0k));
+		for (cur_atom = 0; cur_atom < natoms; ++cur_atom) {
+			if(renew) {
+				srenew(train_vectors[cur_atom], est_frames);
+			}
+			snew(train_vectors[cur_atom][cur_frame], NUMNODE);
+			for (i = 0; i < 3; ++i) {
+				train_vectors[cur_atom][cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
+				train_vectors[cur_atom][cur_frame][i].value = pos[cur_atom][i]; // Value of node is a position component
+			}
+			train_vectors[cur_atom][cur_frame][NUMNODE - 1].index = -1; // -1 index marks end of a data vector
+		}
+		renew = FALSE;
+	} while(read_next_xtc(traj, natoms, &step, &t, box, pos, &prec, &b0k));
 
-	print_traj(pos, num_frames, natoms);
-
-	int i;
-	for (i = 1; i <= num_frames; ++i) {
-		sfree(pos[i]);
-	}
-
-	sfree(pos);
+	/* Cleanup */
 	gmx_fio_close(traj);
+	for (cur_atom = 0; cur_atom < natoms; ++cur_atom)
+	{
+		for (cur_frame = 0; cur_frame < num_frames + 1; ++cur_frame)
+		{
+			sfree(train_vectors[cur_atom][cur_frame]); // Free position vector for each frame
+		}
+		sfree(train_vectors[cur_atom]); // Free all frames for each atom
+	}
+	sfree(train_vectors); // Free all atoms
 }
 
 void print_traj(rvec **pos, int nframes, int natoms) {
