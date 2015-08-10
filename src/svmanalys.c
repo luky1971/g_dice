@@ -37,36 +37,44 @@
  * Copyright (c) 2015, University of South Florida.
  */
 
+#include <stdlib.h>
 #include "svm.h"
 #include "svmutils.h"
 #include "xtcio.h"
 
+#define NUMFILES 2 // The number of input files
 #define FRAMESTEP 1000 // The number of new elements to reallocate by when expanding an array of length # of trajectory frames
 #define NUMNODE 4 // The number of svm_nodes per training vector (4 = 3 xyz pos + 1 for -1 index)
+#define MODELFNLEN 20 // The maximum length of an output model file's filename
 
-void traj2svmprob(const char *traj_file);
+void svmanalys(const char *traj_file);
+void train_traj(struct svm_node ***data, int natoms, int num_frames);
 void print_traj(rvec **pos, int nframes, int natoms);
+void print_train_vecs(struct svm_node ***train_vectors, int dim1, int dim2);
+void save_print_models(struct svm_model **models, int n);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svmanalys analyzes trajectory files produced by GROMACS,",
 		"using support vector machine algorithms."
 	};
-	
-	const char *fnames[1];
-	int files[] = {TRAJ1};
+	const char *fnames[NUMFILES];
+	int files[] = {TRAJ1, TRAJ2};
+
+	/* Initial setup */
 	init_log(argv[0]);
-	
+	srand(time(NULL));
 	get_file_args(argc, argv, desc, asize(desc), files, fnames, NUMFILES);
 	
-	traj2svmprob(fnames[0]);
+	/* Call analysis function on input files */
+	svmanalys(fnames[0]);
 
 	close_log();
 }
 
-void traj2svmprob(const char *traj_file) {
+void svmanalys(const char *traj_file) {
 	/* Reordered svm-training trajectory data: 3Darray[atom #][frame #][position component] */
-	svm_node ***train_vectors;
+	struct svm_node ***train_vectors;
 
 	/* Trajectory data */
 	t_fileio *traj = NULL;
@@ -75,7 +83,7 @@ void traj2svmprob(const char *traj_file) {
 	matrix box;
 	rvec *pos;
 	gmx_bool b0k;
-	int num_frames = 0, est_frames = FRAMESTEP, cur_atom, cur_frame;
+	int num_frames = 0, est_frames = FRAMESTEP, cur_atom, cur_frame, i;
 
 	/* Open trajectory file and get initial data */
 	traj = gmx_fio_open(traj_file, "rb");
@@ -83,7 +91,7 @@ void traj2svmprob(const char *traj_file) {
 
 	/* Allocate memory for training vectors */
 	snew(train_vectors, natoms);
-	for (cur_atom = 0; cur_atom < natoms; ++cur_atom)
+	for (cur_atom = 0; cur_atom < natoms; cur_atom++)
 	{
 		snew(train_vectors[cur_atom], est_frames);
 	}
@@ -97,7 +105,7 @@ void traj2svmprob(const char *traj_file) {
 			est_frames += FRAMESTEP;
 			renew = TRUE;
 		}
-		for (cur_atom = 0; cur_atom < natoms; ++cur_atom) {
+		for (cur_atom = 0; cur_atom < natoms; cur_atom++) {
 			if(renew) {
 				srenew(train_vectors[cur_atom], est_frames);
 			}
@@ -111,25 +119,138 @@ void traj2svmprob(const char *traj_file) {
 		renew = FALSE;
 	} while(read_next_xtc(traj, natoms, &step, &t, box, pos, &prec, &b0k));
 
+	train_traj(train_vectors, natoms, num_frames);
+
 	/* Cleanup */
-	gmx_fio_close(traj);
-	for (cur_atom = 0; cur_atom < natoms; ++cur_atom)
-	{
-		for (cur_frame = 0; cur_frame < num_frames + 1; ++cur_frame)
-		{
-			sfree(train_vectors[cur_atom][cur_frame]); // Free position vector for each frame
-		}
-		sfree(train_vectors[cur_atom]); // Free all frames for each atom
-	}
-	sfree(train_vectors); // Free all atoms
+	gmx_fio_close(traj);// Don't free train_vectors memory because svm_train did something to it? Trying to free causes error
 }
 
+void train_traj(struct svm_node ***data, int natoms, int num_frames) {
+	struct svm_problem *probs; // Array of svm problems for training
+	struct svm_parameter *param; // Parameters used for training
+	struct svm_model **models; // Array of svm models produed by training
+	double *targets; // Array of target classification values 
+	int i;
+
+	snew(probs, natoms);
+	snew(models, natoms);
+	snew(targets, num_frames);
+
+	/* Construct random target values (1 or 2) for testing */
+	for(i = 0; i < num_frames; i++) {
+		targets[i] = rand() % 2 + 1;
+	}
+
+	/* Construct svm problems */
+	for(i = 0; i < natoms; i++) {
+		probs[i].l = num_frames;
+		probs[i].y = targets;
+		probs[i].x = data[i];
+	}
+
+	/* Set svm parameters */
+	param->svm_type = C_SVC;
+	param->kernel_type = RBF;
+	param->gamma = 3;
+	param->cache_size = 100;
+	param->eps = 0.001;
+	param->C = 1;
+	param->shrinking = 1;
+	param->probability = 0;
+
+	/* Train svm */
+	for(i = 0; i < natoms; i++) {
+		models[i] = svm_train(&(probs[i]), param);
+	}
+
+	/* Verify data */
+	save_print_models(models, natoms);
+
+	sfree(probs);
+	sfree(models);
+	sfree(targets);
+}
+
+/********************************************************
+ * Test/debug functions
+ ********************************************************/
+
+/*
+ * Prints the given trajectory data to a text file called "traj.txt"
+ */
 void print_traj(rvec **pos, int nframes, int natoms) {
-	int f, x;
-	for(f = 0; f < nframes; ++f) {
-		printf("\nFrame %d\n", f);
+	int fr, x;
+	FILE *f = fopen("traj.txt", "w");
+
+	for(fr = 0; fr < nframes; fr++) {
+		fprintf(f, "\nFrame %d\n", fr);
 		for(x = 0; x < natoms; x++) {
-			printf("%d: %f %f %f\n", x, pos[f][x][0], pos[f][x][1], pos[f][x][2]);
+			fprintf(f, "%d: %f %f %f\n", x, pos[fr][x][0], pos[fr][x][1], pos[fr][x][2]);
 		}
 	}
+
+	fclose(f);
+}
+
+/*
+ * Prints reordered trajectory training data to a text file called "train.txt" 
+ */
+void print_train_vecs(struct svm_node ***train_vectors, int dim1, int dim2) {
+	int i, j, k;
+	FILE *f = fopen("train.txt", "w");
+
+	for(i = 0; i < dim1; i++) {
+		fprintf(f, "\nAtom %d:\n", i + 1);
+		for(j = 0; j < dim2; j++) {
+			fprintf(f, "\nFrame %d: ", j);
+			for(k = 0; k < 3; k++) {
+				fprintf(f, "%d:%f ", train_vectors[i][j][k].index, train_vectors[i][j][k].value);
+			}
+			fprintf(f, "%d\n", train_vectors[i][j][3].index);
+		}
+	}
+
+	fclose(f);
+}
+
+/*
+ * Saves the given svm models in model files and writes their data to a text file called "modeldata.txt"
+ */
+void save_print_models(struct svm_model **models, int n) {
+	char mod_fn[MODELFNLEN];
+	int i, j, nr_class, nr_sv, *labels, *sv_indices;
+	FILE *f = fopen("modeldata.txt", "w");
+
+	for(i = 0; i < n; i++) {
+		fprintf(f, "Model %d:\n", i + 1);
+		fprintf(f, "SVM Type: %d\n", svm_get_svm_type(models[i]));
+		fprintf(f, "Number of classes: %d\n", nr_class = svm_get_nr_class(models[i]));
+		
+		snew(labels, nr_class);
+		svm_get_labels(models[i], labels);
+		fprintf(f, "Labels: ");
+		for(j = 0; j < nr_class; j++) {
+			fprintf(f, "%d ", labels[j]);
+		}
+		fprintf(f, "\n");
+		sfree(labels);
+
+		fprintf(f, "Number of support vectors: %d\n", nr_sv = svm_get_nr_sv(models[i]));
+
+		snew(sv_indices, nr_sv);
+		svm_get_sv_indices(models[i], sv_indices);
+		fprintf(f, "SV Indices: ");
+		for(j = 0; j < nr_sv; j++) {
+			fprintf(f, "%d ", sv_indices[j]);
+		}
+		fprintf(f, "\n");
+		sfree(sv_indices);
+
+		fprintf(f, "\n");
+
+		sprintf(mod_fn, "trajmodel%d", i + 1);
+		svm_save_model(mod_fn, models[i]);
+	}
+
+	fclose(f);
 }

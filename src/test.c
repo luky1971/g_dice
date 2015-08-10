@@ -207,7 +207,7 @@ void copy_ndx(const char *in_name, int num_groups) {
 }
 
 // void print_traj() {
-// 	FILE tr = fopen("traj.txt", "w");
+// 	FILE *tr = fopen("traj.txt", "w");
 // 	int i;
 // 	for(i = 0; i < isize[0]; i++) {
 // 		fprintf(tr, "%f %f %f\n", pos[indx[0][i]][0], pos[indx[0][i]][1], pos[indx[0][i]][2]);
