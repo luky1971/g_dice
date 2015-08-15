@@ -52,7 +52,7 @@
 void svmanalysA(const char *traj_file1, const char *traj_file2);
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data);
 void svmanalysB(const char *traj_file1, const char *traj_file2);
-//void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_data);
+void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_data);
 void print_traj(rvec **pos, int nframes, int natoms, const char *fname);
 void print_train_vecs(struct svm_node ***train_vectors, int dim1, int dim2, const char *fname);
 void save_print_models(struct svm_model **models, int n, const char *fname);
@@ -140,11 +140,11 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 
 	/* Build targets array with classification labels */
 	int num_data = num_frames * 2;
-	// snew(targets, num_data);
-	// for(i = 0; i < num_data; i+=2) {
-	// 	targets[i] = LABEL1; // trajectory 1
-	// 	targets[i + 1] = LABEL2; // trajectory 2
-	// }
+	snew(targets, num_data);
+	for(i = 0; i < num_data; i+=2) {
+		targets[i] = LABEL1; // trajectory 1
+		targets[i + 1] = LABEL2; // trajectory 2
+	}
 
 	/* Verify reordered data */
 	//print_train_vecs(train_vectors, natoms, num_data, "train.txt");
@@ -198,6 +198,9 @@ void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_d
 }
 
 void svmanalysB(const char *traj_file1, const char *traj_file2) {
+	struct svm_problem *probs; // Array of svm problems for training
+	double *targets; // Array of classification labels (Trajectory -1 or 1)
+
 	/* Trajectory data */
 	t_fileio *traj1 = NULL, *traj2 = NULL;
 	int natoms, step;
@@ -205,7 +208,7 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 	matrix box;
 	rvec **pos1, **pos2;
 	gmx_bool b0k;
-	int num_frames = 0, est_frames = FRAMESTEP;
+	int num_frames = 0, est_frames = FRAMESTEP, i;
 
 	snew(pos1, est_frames);
 	snew(pos2, est_frames);
@@ -230,28 +233,67 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 
 	/* Build targets array with classification labels */
 	int num_data = num_frames * 2;
-	// snew(targets, num_data);
-	// for(i = 0; i < num_data; i+=2) {
-	// 	targets[i] = LABEL1; // trajectory 1
-	// 	targets[i + 1] = LABEL2; // trajectory 2
-	// }
+	snew(targets, num_data);
+	for(i = 0; i < num_data; i+=2) {
+		targets[i] = LABEL1; // trajectory 1
+		targets[i + 1] = LABEL2; // trajectory 2
+	}
 
 	/* Verify reordered data */
-	print_traj(pos1, num_frames, natoms, "traj1.xtc");
-	print_traj(pos2, num_frames, natoms, "traj2.xtc");
+	// print_traj(pos1, num_frames, natoms, "traj1.txt");
+	// print_traj(pos2, num_frames, natoms, "traj2.txt");
+
+	/* Construct svm problem */
+	snew(probs, natoms);
+	for(i = 0; i < natoms; i++) {
+		probs[i].l = num_data;
+		probs[i].y = targets;
+		probs[i].x = data[i];
+	}
+
 
 	/* Train svm */
 	//train_trajB(train_vectors, targets, natoms, num_data);
 
 	gmx_fio_close(traj1);
 	gmx_fio_close(traj2);
-	int i;
+	sfree(probs);
+	sfree(targets);
 	for(i = 1; i < num_frames; i++) {
 		sfree(pos1[i]);
 		sfree(pos2[i]);
 	}
 	sfree(pos1);
 	sfree(pos2);
+}
+
+void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_data) {
+	struct svm_parameter param; // Parameters used for training
+	struct svm_model **models; // Array of svm models produced by training
+	int i;
+
+	snew(models, natoms);
+	
+	/* Set svm parameters */
+	param.svm_type = C_SVC;
+	param.kernel_type = RBF;
+	param.gamma = 3;
+	param.cache_size = 100;
+	param.eps = 0.001;
+	param.C = 1;
+	param.nr_weight = 0;
+	param.shrinking = 1;
+	param.probability = 0;
+
+	/* Train svm */
+	for(i = 0; i < natoms; i++) {
+		models[i] = svm_train(&(probs[i]), &param);
+	}
+
+	// /* Verify data */
+	save_print_models(models, natoms);
+
+	sfree(models);
 }
 
 /********************************************************
