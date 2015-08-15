@@ -52,9 +52,9 @@
 void svmanalysA(const char *traj_file1, const char *traj_file2);
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data);
 void svmanalysB(const char *traj_file1, const char *traj_file2);
-void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_data);
+void train_trajB(struct svm_problem *probs, int num_probs);
 void print_traj(rvec **pos, int nframes, int natoms, const char *fname);
-void print_train_vecs(struct svm_node ***train_vectors, int dim1, int dim2, const char *fname);
+void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname);
 void save_print_models(struct svm_model **models, int n, const char *fname);
 
 int main(int argc, char *argv[]) {
@@ -67,11 +67,10 @@ int main(int argc, char *argv[]) {
 
 	/* Initial setup */
 	init_log(argv[0]);
-	srand(time(NULL));
 	get_file_args(argc, argv, desc, asize(desc), files, fnames, NUMFILES);
 	
 	/* Call analysis function on input files */
-	svmanalysB(fnames[0], fnames[1]);
+	svmanalysA(fnames[0], fnames[1]);
 
 	close_log();
 }
@@ -125,14 +124,14 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 			snew(train_vectors[cur_atom][cur_fr_index + 1], NUMNODE); // Will hold cur_atom's position in current frame in traj2
 			for(i = 0; i < 3; i++) { // Insert position from traj1
 				train_vectors[cur_atom][cur_fr_index][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
-				train_vectors[cur_atom][cur_fr_index][i].value = pos1[cur_atom][i]; // Value of node is a position component
+				train_vectors[cur_atom][cur_fr_index][i].value = pos1[cur_atom][i];
 			}
-			train_vectors[cur_atom][cur_fr_index][NUMNODE - 1].index = -1; // -1 index marks end of a data vector
+			train_vectors[cur_atom][cur_fr_index][i].index = -1; // -1 index marks end of a data vector
 			for(i = 0; i < 3; i++) { // Insert position from traj2
 				train_vectors[cur_atom][cur_fr_index + 1][i].index = i;
 				train_vectors[cur_atom][cur_fr_index + 1][i].value = pos2[cur_atom][i];
 			}
-			train_vectors[cur_atom][cur_fr_index + 1][NUMNODE - 1].index = -1;
+			train_vectors[cur_atom][cur_fr_index + 1][i].index = -1;
 		}
 		renew = FALSE;
 	} while(read_next_xtc(traj1, natoms, &step, &t, box, pos1, &prec, &b0k) 
@@ -160,12 +159,12 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data) {
 	struct svm_problem *probs; // Array of svm problems for training
-	// struct svm_parameter param; // Parameters used for training
-	// struct svm_model **models; // Array of svm models produced by training
+	struct svm_parameter param; // Parameters used for training
+	struct svm_model **models; // Array of svm models produced by training
 	int i;
 
 	snew(probs, natoms);
-	//snew(models, natoms);
+	snew(models, natoms);
 
 	/* Construct svm problems */
 	for(i = 0; i < natoms; i++) {
@@ -175,15 +174,15 @@ void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_d
 	}
 	
 	/* Set svm parameters */
-	// param.svm_type = C_SVC;
-	// param.kernel_type = RBF;
-	// param.gamma = 3;
-	// param.cache_size = 100;
-	// param.eps = 0.001;
-	// param.C = 1;
-	// param.nr_weight = 0;
-	// param.shrinking = 1;
-	// param.probability = 0;
+	param.svm_type = C_SVC;
+	param.kernel_type = RBF;
+	param.gamma = 3;
+	param.cache_size = 100;
+	param.eps = 0.001;
+	param.C = 1;
+	param.nr_weight = 0;
+	param.shrinking = 1;
+	param.probability = 0;
 
 	/* Train svm */
 	// for(i = 0; i < natoms; i++) {
@@ -194,7 +193,7 @@ void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_d
 	// save_print_models(models, natoms, "modeldata.txt");
 
 	sfree(probs);
-	// sfree(models);
+	sfree(models);
 }
 
 void svmanalysB(const char *traj_file1, const char *traj_file2) {
@@ -234,26 +233,56 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 	/* Build targets array with classification labels */
 	int num_data = num_frames * 2;
 	snew(targets, num_data);
-	for(i = 0; i < num_data; i+=2) {
+	for(i = 0; i < num_frames; i++) {
 		targets[i] = LABEL1; // trajectory 1
-		targets[i + 1] = LABEL2; // trajectory 2
+	}
+	for(; i < num_data; i++) {
+		targets[i] = LABEL2; // trajectory 2
 	}
 
 	/* Verify reordered data */
 	// print_traj(pos1, num_frames, natoms, "traj1.txt");
 	// print_traj(pos2, num_frames, natoms, "traj2.txt");
 
-	/* Construct svm problem */
+	/* Construct svm problems */
 	snew(probs, natoms);
-	for(i = 0; i < natoms; i++) {
-		probs[i].l = num_data;
-		probs[i].y = targets;
-		probs[i].x = data[i];
+	int cur_atom, cur_frame, cur_data;
+	for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
+		probs[cur_atom].l = num_data;
+		probs[cur_atom].y = targets;
+		snew(probs[cur_atom].x, num_data);
+		// Insert positions from traj1
+		for(cur_frame = 0; cur_frame < num_frames; cur_frame++) {
+			snew(probs[cur_atom].x[cur_frame], NUMNODE);
+			for(i = 0; i < 3; i++) {
+				probs[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
+				probs[cur_atom].x[cur_frame][i].value = pos1[cur_frame][cur_atom][i];
+			}
+			probs[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
+		}
+		// Insert positions from traj2
+		for(cur_frame = 0, cur_data = num_frames; cur_frame < num_frames; cur_frame++, cur_data++) {
+			snew(probs[cur_atom].x[cur_data], NUMNODE);
+			for(i = 0; i < 3; i++) {
+				probs[cur_atom].x[cur_data][i].index = i;
+				probs[cur_atom].x[cur_data][i].value = pos2[cur_frame][cur_atom][i];
+			}
+			probs[cur_atom].x[cur_data][i].index = -1;
+		}
 	}
 
 
+	/* Verify problem data */
+	/*struct svm_node ***train_vectors;
+	snew(train_vectors, natoms);
+	for(i = 0; i < natoms; i++) {
+		train_vectors[i] = probs[i].x;
+	}
+	print_train_vecs(train_vectors, natoms, targets, num_data, "train.txt");
+	sfree(train_vectors);*/
+
 	/* Train svm */
-	//train_trajB(train_vectors, targets, natoms, num_data);
+	train_trajB(probs, natoms);
 
 	gmx_fio_close(traj1);
 	gmx_fio_close(traj2);
@@ -267,12 +296,12 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 	sfree(pos2);
 }
 
-void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_data) {
+void train_trajB(struct svm_problem *probs, int num_probs) {
 	struct svm_parameter param; // Parameters used for training
 	struct svm_model **models; // Array of svm models produced by training
 	int i;
 
-	snew(models, natoms);
+	snew(models, num_probs);
 	
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
@@ -285,13 +314,13 @@ void train_trajB(struct svm_node ***data, double *targets, int natoms, int num_d
 	param.shrinking = 1;
 	param.probability = 0;
 
-	/* Train svm */
-	for(i = 0; i < natoms; i++) {
-		models[i] = svm_train(&(probs[i]), &param);
-	}
+	// /* Train svm */
+	// for(i = 0; i < num_probs; i++) {
+	// 	models[i] = svm_train(&(probs[i]), &param);
+	// }
 
-	// /* Verify data */
-	save_print_models(models, natoms);
+	/* Verify data */
+	//save_print_models(models, num_probs, "modeldata.txt");
 
 	sfree(models);
 }
@@ -320,14 +349,14 @@ void print_traj(rvec **pos, int nframes, int natoms, const char *fname) {
 /*
  * Prints reordered trajectory training data to a text file with the given name
  */
-void print_train_vecs(struct svm_node ***train_vectors, int dim1, int dim2, const char *fname) {
+void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname) {
 	int i, j, k;
 	FILE *f = fopen(fname, "w");
 
-	for(i = 0; i < dim1; i++) {
+	for(i = 0; i < natoms; i++) {
 		fprintf(f, "\nAtom %d:\n", i + 1);
-		for(j = 0; j < dim2; j++) {
-			fprintf(f, "\nFrame %d Traj %d: ", j / 2, j % 2 + 1);
+		for(j = 0; j < n_data; j++) {
+			fprintf(f, "\nData %d Traj %f: ", j, targets[j]);
 			for(k = 0; k < 3; k++) {
 				fprintf(f, "%d:%f ", train_vectors[i][j][k].index, train_vectors[i][j][k].value);
 			}
