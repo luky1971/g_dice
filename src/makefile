@@ -1,6 +1,6 @@
 INSTALL = /usr/local/bin
 INCGRO = /usr/local/gromacs/include/gromacs
-SVM = ../../../libsvm-3.20
+SVM = ../../libsvm-3.20
 LINKGRO = /usr/local/gromacs/lib
 
 svmanalys: svmanalys.o svmutils.o
