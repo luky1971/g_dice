@@ -1,9 +1,15 @@
+INSTALL = /usr/local/bin
 INCGRO = /usr/local/gromacs/include/gromacs
 SVM = ../../../libsvm-3.20
 LINKGRO = /usr/local/gromacs/lib
 
 svmanalys: svmanalys.o svmutils.o
 	g++ -o svmanalys svmanalys.o svmutils.o $(SVM)/svm.o -L$(LINKGRO) -lgmx
+
+install: svmanalys
+	install svmanalys $(INSTALL)
+
+.PHONY: install
 
 gsvmanalys: svmanalys.c svmutils.c
 	gcc -g -o gsvmanalys svmanalys.c svmutils.c -I$(INCGRO) -L$(LINKGRO) -lgmx
