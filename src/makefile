@@ -23,5 +23,8 @@ svmanalys.o: svmanalys.c svmutils.h
 comanalys.o: comanalys.c svmutils.h
 	gcc -c comanalys.c -I$(INCGRO)
 
+svmio.o: svmio.c svmio.h
+	gcc -c svmio.c -I$(INCGRO)
+
 svmutils.o: svmutils.c svmutils.h
 	gcc -c svmutils.c -I$(INCGRO)

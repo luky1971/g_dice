@@ -44,16 +44,15 @@
 #include "xtcio.h"
 
 #define NUMFILES 2 // The number of input files
-#define FRAMESTEP 1000 // The number of new frames to reallocate by when expanding an array of length # of trajectory frames
 #define NUMNODE 4 // The number of svm_nodes per training vector (4 = 3 xyz pos + 1 for -1 index)
 #define LABEL1 -1 // Classification label for trajectory 1
 #define LABEL2 1 // Classification label for trajectory 2
 #define MODELFNLEN 20 // The maximum length of an output model file's filename
 
-void svmanalysA(const char *traj_file1, const char *traj_file2);
-void svmanalysB(const char *traj_file1, const char *traj_file2);
+void xtc_trainA(const char *traj_file1, const char *traj_file2);
+void xtc_train(const char *traj_file1, const char *traj_file2);
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data);
-void train_trajB(struct svm_problem *probs, int num_probs);
+void train_traj(struct svm_problem *probs, int num_probs);
 void print_traj(rvec **pos, int nframes, int natoms, const char *fname);
 void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname);
 void save_print_models(struct svm_model **models, int n, const char *fname);
@@ -72,7 +71,7 @@ int main(int argc, char *argv[]) {
 	
 	/* Call analysis function on input files */
 	clock_t start = clock();
-	svmanalysB(fnames[0], fnames[1]);
+	xtc_trainB(fnames[0], fnames[1]);
 	clock_t end = clock();
 	print_log("Algorithm B time: %d\n", end - start);
 
@@ -80,10 +79,10 @@ int main(int argc, char *argv[]) {
 }
 
 /*
- * Constructs reordered svm_nodes while reading xtc files.
+ * Constructs reordered svm_nodes while reading 2 xtc files, then calls train.
  * (Sequential read, non-sequential write)
  */
-void svmanalysA(const char *traj_file1, const char *traj_file2) {
+void xtc_trainA(const char *traj_file1, const char *traj_file2) {
 	/* Reordered svm-training trajectory data for 2 trajectories: 3Darray[atom #][frame # x 2][position component]
 	 * In the frame # dimension, data for the two trajectories alternate such that:
 	 * frame[0] = traj1's pos in frame 0; frame[1] = traj2's pos in frame 0; frame[2] = traj1's pos in frame 1; frame[3] = traj2's pos in frame 1; etc
@@ -145,6 +144,10 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 	} while(read_next_xtc(traj1, natoms, &step, &t, box, pos1, &prec, &b0k) 
 		&& read_next_xtc(traj2, natoms, &step, &t, box, pos2, &prec, &b0k));
 
+	/* Original vector arrays no longer needed */
+	sfree(pos1);
+	sfree(pos2);
+
 	/* Build targets array with classification labels */
 	int num_data = num_frames * 2;
 	snew(targets, num_data);
@@ -159,6 +162,7 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 	/* Train svm */
 	train_trajA(train_vectors, targets, natoms, num_data);
 
+	/* Cleanup */
 	gmx_fio_close(traj1);
 	gmx_fio_close(traj2);
 	sfree(targets);
@@ -166,10 +170,10 @@ void svmanalysA(const char *traj_file1, const char *traj_file2) {
 }
 
 /*
- * Reads xtc files first, then reorders data directly into svm_problem.
+ * Reads 2 xtc files first, then reorders data directly into svm_problem and then calls train.
  * (Non-sequential read, sequential write)
  */
-void svmanalysB(const char *traj_file1, const char *traj_file2) {
+void xtc_train(const char *traj_file1, const char *traj_file2) {
 	struct svm_problem *probs; // Array of svm problems for training
 	double *targets; // Array of classification labels (Trajectory -1 or 1)
 
@@ -244,6 +248,13 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 		}
 	}
 
+	/* Original vector arrays no longer needed */
+	for(i = 0; i < num_frames; i++) {
+		sfree(pos1[i]);
+		sfree(pos2[i]);
+	}
+	sfree(pos1);
+	sfree(pos2);
 
 	/* Verify problem data */
 	/*struct svm_node ***train_vectors;
@@ -255,18 +266,13 @@ void svmanalysB(const char *traj_file1, const char *traj_file2) {
 	sfree(train_vectors);*/
 
 	/* Train svm */
-	train_trajB(probs, natoms);
+	train_traj(probs, natoms);
 
+	/* Cleanup */
 	gmx_fio_close(traj1);
 	gmx_fio_close(traj2);
 	sfree(probs);
 	sfree(targets);
-	for(i = 1; i < num_frames; i++) {
-		sfree(pos1[i]);
-		sfree(pos2[i]);
-	}
-	sfree(pos1);
-	sfree(pos2);
 }
 
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data) {
@@ -297,9 +303,9 @@ void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_d
 	param.probability = 0;
 
 	/* Train svm */
-	// for(i = 0; i < natoms; i++) {
-	// 	models[i] = svm_train(&(probs[i]), &param);
-	// }
+	for(i = 0; i < natoms; i++) {
+		models[i] = svm_train(&(probs[i]), &param);
+	}
 
 	/* Verify data */
 	// save_print_models(models, natoms, "modeldata.txt");
@@ -308,7 +314,7 @@ void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_d
 	sfree(models);
 }
 
-void train_trajB(struct svm_problem *probs, int num_probs) {
+void train_traj(struct svm_problem *probs, int num_probs) {
 	struct svm_parameter param; // Parameters used for training
 	struct svm_model **models; // Array of svm models produced by training
 	int i;
@@ -326,10 +332,10 @@ void train_trajB(struct svm_problem *probs, int num_probs) {
 	param.shrinking = 1;
 	param.probability = 0;
 
-	// /* Train svm */
-	// for(i = 0; i < num_probs; i++) {
-	// 	models[i] = svm_train(&(probs[i]), &param);
-	// }
+	/* Train svm */
+	for(i = 0; i < num_probs; i++) {
+		models[i] = svm_train(&(probs[i]), &param);
+	}
 
 	/* Verify data */
 	//save_print_models(models, num_probs, "modeldata.txt");
