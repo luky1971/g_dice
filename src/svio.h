@@ -43,13 +43,16 @@
 #include "gmxfio.h"
 #include "smalloc.h"
 #include "statutil.h"
+#include "svutils.h"
 #include "trnio.h"
 #include "xtcio.h"
 
 #define FRAMESTEP 500 // The number of new frames to reallocate by when expanding an array of length # of trajectory frames
 
 void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
-void copy_trr(const char *in_name);
+
+void read_trr(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
+
 void copy_pdb(const char *in_name, const char *out_name);
 void copy_ndx(const char *in_name, int num_groups);
 

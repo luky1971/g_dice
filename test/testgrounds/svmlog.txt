@@ -179,3 +179,49 @@ Average: 1.228857 1.247301 1.231951
 ./../../src/svmanalys run: 8-1-2015 22:32:11
 
 ./../../src/svmanalys run: 8-1-2015 22:37:27
+
+svmanalys run: 8-16-2015 17:14:18
+Execution time: 119368
+
+svmanalys run: 8-16-2015 17:54:31
+Reading trr.
+
+svmanalys run: 8-16-2015 17:55:27
+Reading trr.
+Reading trr.
+Execution time: 1221
+
+svmanalys run: 8-16-2015 18:0:12
+Reading trr.
+Reading trr.
+Execution time: 143413
+
+svmanalys run: 8-16-2015 18:1:38
+Reading trr.
+Reading trr.
+Execution time: 132091
+
+svmanalys run: 8-16-2015 18:2:42
+Reading trr.
+Reading trr.
+Execution time: 134877
+
+svmanalys run: 8-16-2015 18:7:19
+Reading trr.
+Reading trr.
+Execution time: 143636
+
+svmanalys run: 8-16-2015 18:8:56
+Reading trr.
+Reading trr.
+Execution time: 160726
+
+svmanalys run: 8-16-2015 18:10:8
+Reading trr.
+Reading trr.
+Execution time: 125063
+
+svmanalys run: 8-16-2015 18:22:22
+Reading trr.
+Reading trr.
+Execution time: 125886

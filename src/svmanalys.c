@@ -50,6 +50,7 @@
 #define LABEL2 1 // Classification label for trajectory 2
 #define MODELFNLEN 20 // The maximum length of an output model file's filename
 
+void svmanalys(const char *traj_file1, const char *traj_file2);
 void xtc_trainA(const char *traj_file1, const char *traj_file2);
 void xtc_train(const char *traj_file1, const char *traj_file2);
 void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data);
@@ -83,8 +84,8 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 	rvec **pos1, **pos2;
 	int nframes, natoms;
 
-	read_xtc(traj_file1, &pos1, &nframes, &natoms);
-	read_xtc(traj_file2, &pos2, &nframes, &natoms);
+	read_trr(traj_file1, &pos1, &nframes, &natoms);
+	read_trr(traj_file2, &pos2, &nframes, &natoms);
 
 	print_traj(pos1, nframes, natoms, "traj1.txt");
 	print_traj(pos2, nframes, natoms, "traj2.txt");

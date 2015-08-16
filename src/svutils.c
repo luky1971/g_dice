@@ -73,7 +73,7 @@ void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, in
 }
 
 /* Opens the logfile and logs initial time/date */
-void init_log(char *program) {
+void init_log(const char *program) {
 	out_log = fopen("svmlog.txt", "a");
 	
 	time_t t = time(NULL);

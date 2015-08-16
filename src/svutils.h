@@ -58,7 +58,7 @@ enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
 void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files);
 
 /* Opens the logfile and logs initial time/date */
-void init_log(char *program);
+void init_log(const char *program);
 
 /* Closes the logfile */
 void close_log(void);

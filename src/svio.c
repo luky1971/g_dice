@@ -39,6 +39,7 @@
 #include "svio.h"
 
 void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
+	print_log("Reading xtc.\n");
 	t_fileio *traj = NULL;
 	int step;
 	real t, prec;
@@ -64,32 +65,33 @@ void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
 	gmx_fio_close(traj);
 }
 
-void copy_trr(const char *in_name) {
-	t_fileio *input = NULL, *output = NULL;
+void read_trr(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
+	print_log("Reading trr.\n");
+	t_fileio *traj = NULL;
 	t_trnheader header;
-	rvec *box, *x, *v;
 	gmx_bool b0k;
+	*nframes = 0;
+	int est_frames = FRAMESTEP;
 	
-	input = open_trn(in_name, "rb");
-	output = open_trn("trout.trr", "wb");
+	traj = gmx_fio_open(traj_fname, "rb");
+
+	snew(*x, est_frames);
+	while(fread_trnheader(traj, &header, &b0k)) {
+		if(*nframes >= est_frames) {
+			est_frames += FRAMESTEP;
+			srenew(*x, est_frames);
+		}
+		snew((*x)[*nframes], header.natoms);
+		if(fread_htrn(traj, &header, NULL, (*x)[*nframes], NULL, NULL)) {
+			(*nframes)++;
+		}
+		else {
+			break;
+		}
+	}
+	*natoms = header.natoms;
 	
-	fread_trnheader(input, &header, &b0k);
-	
-	snew(box, header.box_size);
-	snew(x, header.natoms);
-	snew(v, header.natoms);
-	
-	fread_htrn(input, &header, box, x, v, NULL);
-	
-	do {
-		fwrite_trn(output, header.step, header.t, header.lambda, box, header.natoms, x, v, NULL);
-	} while(fread_trnheader(input, &header, &b0k) && fread_htrn(input, &header, box, x, v, NULL));
-	
-	sfree(box);
-	sfree(x);
-	sfree(v);
-	close_trn(input);
-	close_trn(output);
+	gmx_fio_close(traj);
 }
 
 void copy_pdb(const char *in_name, const char *out_name) {
