@@ -40,7 +40,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include "svm.h"
-#include "svmutils.h"
+#include "svio.h"
+#include "svutils.h"
 #include "xtcio.h"
 
 #define NUMFILES 2 // The number of input files
@@ -71,11 +72,30 @@ int main(int argc, char *argv[]) {
 	
 	/* Call analysis function on input files */
 	clock_t start = clock();
-	xtc_trainB(fnames[0], fnames[1]);
+	svmanalys(fnames[0], fnames[1]);
 	clock_t end = clock();
-	print_log("Algorithm B time: %d\n", end - start);
+	print_log("Execution time: %d\n", end - start);
 
 	close_log();
+}
+
+void svmanalys(const char *traj_file1, const char *traj_file2) {
+	rvec **pos1, **pos2;
+	int nframes, natoms;
+
+	read_xtc(traj_file1, &pos1, &nframes, &natoms);
+	read_xtc(traj_file2, &pos2, &nframes, &natoms);
+
+	print_traj(pos1, nframes, natoms, "traj1.txt");
+	print_traj(pos2, nframes, natoms, "traj2.txt");
+
+	int i;
+	for(i = 0; i < nframes; i++) {
+		sfree(pos1[i]);
+		sfree(pos2[i]);
+	}
+	sfree(pos1);
+	sfree(pos2);
 }
 
 /*

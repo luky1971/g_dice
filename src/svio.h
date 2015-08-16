@@ -32,44 +32,25 @@
  * And Hey:
  * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 
- * Written by Ahnaf Siddiqui and Dr. Sameer Varma.
+ * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  */
 
-#ifndef _svmutils_h
-#define _svmutils_h
+#ifndef _svio_h
+#define _svio_h
 
-#include <stdarg.h>
-#include <stdio.h>
-#include "gmx_fatal.h"
-#include "macros.h"
+#include "confio.h"
+#include "gmxfio.h"
 #include "smalloc.h"
 #include "statutil.h"
-#include "typedefs.h"
+#include "trnio.h"
+#include "xtcio.h"
 
-/* Enumeration of input and output files */
-enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
+#define FRAMESTEP 500 // The number of new frames to reallocate by when expanding an array of length # of trajectory frames
 
-/*
- * Gets file names from command line
- * int files[] are the desired files based on files enum defined above
- * Requested file names will be stored in fnames
- */
-void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files);
-
-/* Opens the logfile and logs initial time/date */
-void init_log(char *program);
-
-/* Closes the logfile */
-void close_log(void);
-
-/* Prints to both stdout and the logfile */
-void print_log(char const *fmt, ...);
-
-/* 
- * Logs fatal error to logfile and also calls gmx_fatal
- * Hint: Use FARGS for the first 3 arguments.
- */
-void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
+void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
+void copy_trr(const char *in_name);
+void copy_pdb(const char *in_name, const char *out_name);
+void copy_ndx(const char *in_name, int num_groups);
 
 #endif

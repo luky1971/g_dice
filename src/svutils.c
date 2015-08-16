@@ -36,7 +36,7 @@
  * Copyright (c) 2015, University of South Florida.
  */
 
-#include "svmutils.h"
+#include "svutils.h"
 
 static FILE *out_log = NULL;
 static output_env_t oenv = NULL;
@@ -92,6 +92,9 @@ void print_log(char const *fmt, ...) {
 	va_start(arg, fmt);
 	vprintf(fmt, arg);
 	va_end(arg);
+	if(out_log == NULL) {
+		init_log(__FILE__);
+	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);
 		vfprintf(out_log, fmt, arg);
@@ -105,6 +108,9 @@ void print_log(char const *fmt, ...) {
  */
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
 	va_list arg;
+	if(out_log == NULL) {
+		init_log(file);
+	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);
 		fprintf(out_log, "Fatal error in source file %s line %d: ", file, line);

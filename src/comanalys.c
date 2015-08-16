@@ -37,7 +37,7 @@
  * Copyright (c) 2015, University of South Florida.
  */
  
-#include "svmutils.h"
+#include "svutils.h"
 #include "xtcio.h"
 
 void trajcom(const char *traj_file, const char *index_file);

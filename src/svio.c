@@ -36,7 +36,7 @@
  * Copyright (c) 2015, University of South Florida.
  */
 
-#include "svmio.h"
+#include "svio.h"
 
 void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
 	t_fileio *traj = NULL;

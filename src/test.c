@@ -45,7 +45,7 @@
 #include "macros.h"
 #include "smalloc.h"
 #include "statutil.h"
-#include "svmutils.h"
+#include "svutils.h"
 #include "trnio.h"
 #include "typedefs.h"
 #include "xtcio.h"
