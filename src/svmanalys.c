@@ -48,7 +48,7 @@
 #define LABEL2 1 // Classification label for trajectory 2
 #define SHRINK 1 // Whether or not to use shrinking heuristics in svm_train
 
-void svmanalys(const char *traj_file1, const char *traj_file2);
+void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_file1, const char *ndx_file2);
 void train_traj(struct svm_problem *probs, int num_probs);
 
 int main(int argc, char *argv[]) {
@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 		"svmanalys analyzes trajectory files produced by GROMACS,",
 		"using support vector machine algorithms."
 	};
-#define NUMFILES 2 // The number of input files
+#define NUMFILES 4 // The number of input files
 	const char *fnames[NUMFILES];
-	int files[] = {TRAJ1, TRAJ2};
+	int files[] = {TRAJ1, TRAJ2, NDX1, NDX2};
 
 	/* Initial setup */
 	init_log(argv[0]);
@@ -66,18 +66,21 @@ int main(int argc, char *argv[]) {
 	
 	/* Call analysis function on input files */
 	clock_t start = clock();
-	svmanalys(fnames[0], fnames[1]);
+	svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
 	clock_t end = clock();
 	print_log("Execution time: %d\n", end - start);
 
 	close_log();
 }
 
-void svmanalys(const char *traj_file1, const char *traj_file2) {
-	struct svm_problem *probs; // Array of svm problems for training
-	double *targets; // Array of classification labels (Trajectory -1 or 1)
+void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_file1, const char *ndx_file2) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 
+	/* Training data */
+	struct svm_problem *probs; // Array of svm problems for training
+	double *targets; // Array of classification labels (Trajectory -1 or 1)
+
+	/* Trajectory data */
 	rvec **pos1, **pos2; // Trajectory position vectors
 	int nframes, nframes2, natoms, natoms2, num_data, i;
 
@@ -108,14 +111,45 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 		default:
 			log_fatal(FARGS, io_error);
 	}
-	
+
 	/* In case input files have different numbers of frames or atoms */
 	nframes = nframes2 < nframes ? nframes2 : nframes;
 	natoms = natoms2 < natoms ? natoms2 : natoms;
 
 	/* Verify read data */
-	print_traj(pos1, nframes, natoms, "traj1.txt");
-	print_traj(pos2, nframes, natoms, "traj2.txt");
+	// print_traj(pos1, nframes, natoms, "traj1.txt");
+	// print_traj(pos2, nframes, natoms, "traj2.txt");
+
+	/* Index data */
+#define NUMGROUPS 1
+	int *isize;
+	atom_id **indx1, **indx2; // Atom indices for the two trajectories
+	char **grp_names;
+
+	snew(isize, NUMGROUPS);
+	snew(indx1, NUMGROUPS);
+	snew(grp_names, NUMGROUPS);
+
+	/* If an index file was given, get atom group with indices that will be trained */
+	if(ndx_file1 != NULL) {
+		rd_index(ndx_file1, NUMGROUPS, isize, indx1, grp_names);
+	}
+	else { // If no index file, set default indices as 0 to natoms - 1
+		snew(indx1[0], natoms);
+		isize[0] = natoms;
+		for(i = 0; i < natoms; i++) {
+			indx1[0][i] = i;
+		}
+	}
+	if(ndx_file2 != NULL) {
+		snew(indx2, NUMGROUPS);
+		rd_index(ndx_file2, NUMGROUPS, isize, indx2, grp_names);
+	}
+	else {
+		indx2 = indx1;
+	}
+	sfree(grp_names);
+
 
 	num_data = nframes * 2;
 
@@ -129,9 +163,9 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 	}
 
 	/* Construct svm problems */
-	snew(probs, natoms);
+	snew(probs, isize[0]);
 	int cur_atom, cur_frame, cur_data;
-	for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
+	for(cur_atom = 0; cur_atom < isize[0]; cur_atom++) {
 		probs[cur_atom].l = num_data;
 		probs[cur_atom].y = targets;
 		snew(probs[cur_atom].x, num_data);
@@ -140,7 +174,7 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 			snew(probs[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
 				probs[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
-				probs[cur_atom].x[cur_frame][i].value = pos1[cur_frame][cur_atom][i];
+				probs[cur_atom].x[cur_frame][i].value = pos1[cur_frame][indx1[0][cur_atom]][i];
 			}
 			probs[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
 		}
@@ -149,11 +183,14 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 			snew(probs[cur_atom].x[cur_data], 4);
 			for(i = 0; i < 3; i++) {
 				probs[cur_atom].x[cur_data][i].index = i;
-				probs[cur_atom].x[cur_data][i].value = pos2[cur_frame][cur_atom][i];
+				probs[cur_atom].x[cur_data][i].value = pos2[cur_frame][indx2[0][cur_atom]][i];
 			}
 			probs[cur_atom].x[cur_data][i].index = -1;
 		}
 	}
+	
+	/* Verify problem data */
+	print_svm_probs(probs, isize[0], "probs.txt");
 
 	/* No longer need original vectors */
 	for(i = 0; i < nframes; i++) {
@@ -162,6 +199,15 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 	}
 	sfree(pos1);
 	sfree(pos2);
+
+	/* No longer need index data */
+	sfree(isize);
+	sfree(indx1[0]);
+	sfree(indx1);
+	if(ndx_file2 != NULL) {
+		sfree(indx2[0]);
+		sfree(indx2);
+	}
 
 	/* Train SVM */
 	train_traj(probs, natoms);

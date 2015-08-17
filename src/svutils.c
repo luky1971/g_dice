@@ -44,12 +44,16 @@ static output_env_t oenv = NULL;
 /*
  * Gets file names from command line
  * int files[] are the desired files based on files enum defined in svmutils.h
- * Requested file names will be stored in fnames
+ * Requested file names will be stored in fnames in same order as files[]
+ * opt_set contains whether each corresponding file's option was actually found on the command line.
  */
-void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files) {
+void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, 
+	int files[], const char *fnames[], int num_files) {
+
 	int filetypes[] = {efTRX, efTRX, efNDX, efNDX, efPDB, efDAT, efDAT};
 	const char *options[] = {"-f1", "-f2", "-n1", "-n2", "-o_atom", "-eta_atom", "-eta_res"};
-	const char *def_names[] = {"traj1.xtc", "traj2.xtc", "index1.ndx", "index2.ndx", "eta_atom.pdb", "eta_atom.dat", "eta_res.dat"};
+	const char *def_names[] = {"traj1.xtc", "traj2.xtc", "index1.ndx", "index2.ndx", 
+		"eta_atom.pdb", "eta_atom.dat", "eta_res.dat"};
 	unsigned long modes[] = {ffREAD, ffREAD, ffOPTRD, ffOPTRD, ffWRITE, ffWRITE, ffWRITE};
 	int i;
 	t_filenm *fnm;
@@ -66,7 +70,7 @@ void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, in
 	parse_common_args(&argc, argv, 0, num_files, fnm, 0, NULL, desc_size, desc, 0, NULL, &oenv);
 	
 	for(i = 0; i < num_files; i++) {
-		fnames[i] = opt2fn(options[files[i]], num_files, fnm);
+		fnames[i] = opt2fn_null(options[files[i]], num_files, fnm);
 	}
 
 	sfree(fnm);
@@ -78,7 +82,9 @@ void init_log(const char *program) {
 	
 	time_t t = time(NULL);
 	struct tm *ltime = localtime(&t);
-	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", program, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900, ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+	fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n", 
+		program, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900, 
+		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
 
 /* Closes the logfile */
@@ -160,7 +166,9 @@ void print_vecs(rvec *x, int natoms, const char *fname) {
 /*
  * Prints reordered trajectory training nodes to a text file with the given name
  */
-void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname) {
+void print_train_vecs(struct svm_node ***train_vectors, 
+	int natoms, double *targets, int n_data, const char *fname) {
+
 	int i, j, k;
 	FILE *f = fopen(fname, "w");
 
@@ -171,7 +179,28 @@ void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targ
 			for(k = 0; k < 3; k++) {
 				fprintf(f, "%d:%f ", train_vectors[i][j][k].index, train_vectors[i][j][k].value);
 			}
-			fprintf(f, "%d\n", train_vectors[i][j][3].index);
+			fprintf(f, "%d\n", train_vectors[i][j][k].index);
+		}
+	}
+
+	fclose(f);
+}
+
+/*
+ * Prints svm_problem data to a text file with the given name
+ */
+void print_svm_probs(struct svm_problem *probs, int nprobs, const char *fname) {
+	int i, j, k;
+	FILE *f = fopen(fname, "w");
+
+	for(i = 0; i < nprobs; i++) {
+		fprintf(f, "\nProblem %d:\n", i);
+		for(j = 0; j < probs[i].l; j++) {
+			fprintf(f, "\nData %d Target %f: ", j, probs[i].y[j]);
+			for(k = 0; k < 3; k++) {
+				fprintf(f, "%d:%f ", probs[i].x[j][k].index, probs[i].x[j][k].value);
+			}
+			fprintf(f, "%d\n", probs[i].x[j][k].index);
 		}
 	}
 

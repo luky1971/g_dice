@@ -56,7 +56,8 @@ enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
  * int files[] are the desired files based on files enum defined above
  * Requested file names will be stored in fnames
  */
-void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, int files[], const char *fnames[], int num_files);
+void get_file_args(int argc, char *argv[], const char *desc[], int desc_size, 
+	int files[], const char *fnames[], int num_files);
 
 /* Opens the logfile and logs initial time/date */
 void init_log(const char *program);
@@ -91,7 +92,13 @@ void print_vecs(rvec *x, int natoms, const char *fname);
 /*
  * Prints reordered trajectory training nodes to a text file with the given name
  */
-void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname);
+void print_train_vecs(struct svm_node ***train_vectors, 
+	int natoms, double *targets, int n_data, const char *fname);
+
+/*
+ * Prints svm_problem data to a text file with the given name
+ */
+void print_svm_probs(struct svm_problem *probs, int nprobs, const char *fname);
 
 /*
  * Saves the given svm models in model files and writes their data to a text file with the given name
