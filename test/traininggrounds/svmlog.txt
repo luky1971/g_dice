@@ -142,3 +142,53 @@ svmanalys run: 8-17-2015 1:7:41
 Reading xtc.
 Reading xtc.
 Execution time: 2559405
+
+svmanalys run: 8-17-2015 13:31:52
+Reading xtc.
+Reading xtc.
+Execution time: 42514
+
+svmanalys run: 8-17-2015 13:32:18
+Reading xtc.
+Reading xtc.
+Execution time: 42884
+
+svmanalys run: 8-17-2015 13:34:4
+Reading xtc.
+Reading xtc.
+Execution time: 37254
+
+svmanalys run: 8-17-2015 13:35:35
+Reading xtc.
+Reading xtc.
+Execution time: 37588
+
+svmanalys run: 8-17-2015 13:52:59
+Reading xtc.
+Reading xtc.
+Execution time: 46021
+
+svmanalys run: 8-17-2015 13:53:11
+Reading xtc.
+Reading xtc.
+Fatal error in source file svmanalys.c line 149: Error: Given index groups have different numbers of atoms!
+
+svmanalys run: 8-17-2015 13:55:30
+Reading xtc.
+Reading xtc.
+Execution time: 55373
+
+svmanalys run: 8-17-2015 14:2:44
+Reading xtc.
+Reading xtc.
+Execution time: 104930
+
+svmanalys run: 8-17-2015 14:3:34
+Reading xtc.
+Reading xtc.
+Execution time: 1133406
+
+svmanalys run: 8-17-2015 14:5:13
+Reading xtc.
+Reading xtc.
+Execution time: 1197193

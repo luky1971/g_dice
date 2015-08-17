@@ -122,7 +122,7 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 
 	/* Index data */
 #define NUMGROUPS 1
-	int *isize;
+	int *isize, *isize2;
 	atom_id **indx1, **indx2; // Atom indices for the two trajectories
 	char **grp_names;
 
@@ -142,14 +142,22 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 		}
 	}
 	if(ndx_file2 != NULL) {
+		snew(isize2, NUMGROUPS);
 		snew(indx2, NUMGROUPS);
-		rd_index(ndx_file2, NUMGROUPS, isize, indx2, grp_names);
+		rd_index(ndx_file2, NUMGROUPS, isize2, indx2, grp_names);
+		if(isize2[0] != isize[0]) {
+			log_fatal(FARGS, "Given index groups have different numbers of atoms!\n");
+		}
 	}
 	else {
 		indx2 = indx1;
 	}
 	sfree(grp_names);
 
+	/* Verify indices */
+	for(i = 0; i < isize[0]; i++) {
+		printf("%d: %d and %d\n", i, indx1[0][i], indx2[0][i]);
+	}
 
 	num_data = nframes * 2;
 
@@ -188,7 +196,7 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 			probs[cur_atom].x[cur_data][i].index = -1;
 		}
 	}
-	
+
 	/* Verify problem data */
 	print_svm_probs(probs, isize[0], "probs.txt");
 
@@ -200,18 +208,17 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 	sfree(pos1);
 	sfree(pos2);
 
-	/* No longer need index data */
+	/* Train SVM */
+	train_traj(probs, isize[0]);
+
 	sfree(isize);
 	sfree(indx1[0]);
 	sfree(indx1);
 	if(ndx_file2 != NULL) {
+		sfree(isize2);
 		sfree(indx2[0]);
 		sfree(indx2);
 	}
-
-	/* Train SVM */
-	train_traj(probs, natoms);
-
 	sfree(probs); // Don't free the data within probs, will cause error
 	sfree(targets);
 }
