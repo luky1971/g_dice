@@ -121,3 +121,101 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
 	gmx_fatal(fatal_errno, file, line, fmt, arg);
 	va_end(arg);
 }
+
+/********************************************************
+ * Test/debug functions
+ ********************************************************/
+
+/*
+ * Prints the given 2D array of vectors to a text file with the given name
+ */
+void print_traj(rvec **x, int nframes, int natoms, const char *fname) {
+	int fr, i;
+	FILE *f = fopen(fname, "w");
+
+	for(fr = 0; fr < nframes; fr++) {
+		fprintf(f, "\nFrame %d\n", fr);
+		for(i = 0; i < natoms; i++) {
+			fprintf(f, "%d: %f %f %f\n", i, x[fr][i][0], x[fr][i][1], x[fr][i][2]);
+		}
+	}
+
+	fclose(f);
+}
+
+/*
+ * Prints the given array of vectors to a text file with the given name
+ */
+void print_vecs(rvec *x, int natoms, const char *fname) {
+	int i;
+	FILE *f = fopen(fname, "w");
+
+	for(i = 0; i < natoms; i++) {
+		fprintf(f, "%d: %f %f %f\n", i, x[i][0], x[i][1], x[i][2]);
+	}
+
+	fclose(f);
+}
+
+/*
+ * Prints reordered trajectory training nodes to a text file with the given name
+ */
+void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname) {
+	int i, j, k;
+	FILE *f = fopen(fname, "w");
+
+	for(i = 0; i < natoms; i++) {
+		fprintf(f, "\nAtom %d:\n", i + 1);
+		for(j = 0; j < n_data; j++) {
+			fprintf(f, "\nData %d Traj %f: ", j, targets[j]);
+			for(k = 0; k < 3; k++) {
+				fprintf(f, "%d:%f ", train_vectors[i][j][k].index, train_vectors[i][j][k].value);
+			}
+			fprintf(f, "%d\n", train_vectors[i][j][3].index);
+		}
+	}
+
+	fclose(f);
+}
+
+/*
+ * Saves the given svm models in model files and writes their data to a text file with the given name
+ */
+void save_print_models(struct svm_model **models, int n, const char *fname) {
+	char mod_fn[20];
+	int i, j, nr_class, nr_sv, *labels, *sv_indices;
+	FILE *f = fopen(fname, "w");
+
+	for(i = 0; i < n; i++) {
+		fprintf(f, "Model %d:\n", i + 1);
+		fprintf(f, "SVM Type: %d\n", svm_get_svm_type(models[i]));
+		fprintf(f, "Number of classes: %d\n", nr_class = svm_get_nr_class(models[i]));
+		
+		snew(labels, nr_class);
+		svm_get_labels(models[i], labels);
+		fprintf(f, "Labels: ");
+		for(j = 0; j < nr_class; j++) {
+			fprintf(f, "%d ", labels[j]);
+		}
+		fprintf(f, "\n");
+		sfree(labels);
+
+		fprintf(f, "Number of support vectors: %d\n", nr_sv = svm_get_nr_sv(models[i]));
+
+		snew(sv_indices, nr_sv);
+		svm_get_sv_indices(models[i], sv_indices);
+		fprintf(f, "SV Indices: ");
+		for(j = 0; j < nr_sv; j++) {
+			fprintf(f, "%d ", sv_indices[j]);
+		}
+		fprintf(f, "\n");
+		sfree(sv_indices);
+
+		fprintf(f, "\n");
+
+		sprintf(mod_fn, "trajmodel%d", i + 1);
+		svm_save_model(mod_fn, models[i]);
+	}
+
+	fclose(f);
+}

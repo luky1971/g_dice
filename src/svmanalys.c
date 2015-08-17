@@ -44,26 +44,18 @@
 #include "svutils.h"
 #include "xtcio.h"
 
-#define NUMFILES 2 // The number of input files
-#define NUMNODE 4 // The number of svm_nodes per training vector (4 = 3 xyz pos + 1 for -1 index)
 #define LABEL1 -1 // Classification label for trajectory 1
 #define LABEL2 1 // Classification label for trajectory 2
-#define MODELFNLEN 20 // The maximum length of an output model file's filename
 
 void svmanalys(const char *traj_file1, const char *traj_file2);
-void xtc_trainA(const char *traj_file1, const char *traj_file2);
-void xtc_train(const char *traj_file1, const char *traj_file2);
-void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data);
 void train_traj(struct svm_problem *probs, int num_probs);
-void print_traj(rvec **pos, int nframes, int natoms, const char *fname);
-void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname);
-void save_print_models(struct svm_model **models, int n, const char *fname);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svmanalys analyzes trajectory files produced by GROMACS,",
 		"using support vector machine algorithms."
 	};
+#define NUMFILES 2 // The number of input files
 	const char *fnames[NUMFILES];
 	int files[] = {TRAJ1, TRAJ2};
 
@@ -81,166 +73,59 @@ int main(int argc, char *argv[]) {
 }
 
 void svmanalys(const char *traj_file1, const char *traj_file2) {
-	rvec **pos1, **pos2;
-	int nframes, natoms;
-
-	read_trr(traj_file1, &pos1, &nframes, &natoms);
-	read_trr(traj_file2, &pos2, &nframes, &natoms);
-
-	print_traj(pos1, nframes, natoms, "traj1.txt");
-	print_traj(pos2, nframes, natoms, "traj2.txt");
-
-	int i;
-	for(i = 0; i < nframes; i++) {
-		sfree(pos1[i]);
-		sfree(pos2[i]);
-	}
-	sfree(pos1);
-	sfree(pos2);
-}
-
-/*
- * Constructs reordered svm_nodes while reading 2 xtc files, then calls train.
- * (Sequential read, non-sequential write)
- */
-void xtc_trainA(const char *traj_file1, const char *traj_file2) {
-	/* Reordered svm-training trajectory data for 2 trajectories: 3Darray[atom #][frame # x 2][position component]
-	 * In the frame # dimension, data for the two trajectories alternate such that:
-	 * frame[0] = traj1's pos in frame 0; frame[1] = traj2's pos in frame 0; frame[2] = traj1's pos in frame 1; frame[3] = traj2's pos in frame 1; etc
-	 */ 
-	struct svm_node ***train_vectors;
-	double *targets; // Array of classification labels (Trajectory -1 or 1)
-
-	/* Trajectory data */
-	t_fileio *traj1 = NULL, *traj2 = NULL;
-	int natoms, step;
-	real t, prec;
-	matrix box;
-	rvec *pos1, *pos2;
-	gmx_bool b0k;
-	int num_frames = 0, est_frames = FRAMESTEP, cur_atom, cur_frame, cur_fr_index, i;
-
-	/* Open trajectory files and get initial data */
-	traj1 = gmx_fio_open(traj_file1, "rb");
-	traj2 = gmx_fio_open(traj_file2, "rb");
-	read_first_xtc(traj1, &natoms, &step, &t, box, &pos1, &prec, &b0k);
-	read_first_xtc(traj2, &natoms, &step, &t, box, &pos2, &prec, &b0k);
-
-	/* Allocate memory for training vectors */
-	snew(train_vectors, natoms);
-	for(cur_atom = 0; cur_atom < natoms; cur_atom++)
-	{
-		snew(train_vectors[cur_atom], est_frames * 2);
-	}
-
-	/* Read and simultaneously reorder trajectory data from two xtc files into svm training format */ 
-	gmx_bool renew = FALSE;
-
-	do {
-		cur_frame = num_frames;
-		cur_fr_index = cur_frame * 2;
-		num_frames++;
-		if(num_frames > est_frames) {
-			est_frames += FRAMESTEP;
-			renew = TRUE;
-		}
-		for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
-			if(renew) {
-				srenew(train_vectors[cur_atom], est_frames * 2);
-			}
-			snew(train_vectors[cur_atom][cur_fr_index], NUMNODE); // Will hold cur_atom's position in current frame in traj1
-			snew(train_vectors[cur_atom][cur_fr_index + 1], NUMNODE); // Will hold cur_atom's position in current frame in traj2
-			for(i = 0; i < 3; i++) { // Insert position from traj1
-				train_vectors[cur_atom][cur_fr_index][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
-				train_vectors[cur_atom][cur_fr_index][i].value = pos1[cur_atom][i];
-			}
-			train_vectors[cur_atom][cur_fr_index][i].index = -1; // -1 index marks end of a data vector
-			for(i = 0; i < 3; i++) { // Insert position from traj2
-				train_vectors[cur_atom][cur_fr_index + 1][i].index = i;
-				train_vectors[cur_atom][cur_fr_index + 1][i].value = pos2[cur_atom][i];
-			}
-			train_vectors[cur_atom][cur_fr_index + 1][i].index = -1;
-		}
-		renew = FALSE;
-	} while(read_next_xtc(traj1, natoms, &step, &t, box, pos1, &prec, &b0k) 
-		&& read_next_xtc(traj2, natoms, &step, &t, box, pos2, &prec, &b0k));
-
-	/* Original vector arrays no longer needed */
-	sfree(pos1);
-	sfree(pos2);
-
-	/* Build targets array with classification labels */
-	int num_data = num_frames * 2;
-	snew(targets, num_data);
-	for(i = 0; i < num_data; i+=2) {
-		targets[i] = LABEL1; // trajectory 1
-		targets[i + 1] = LABEL2; // trajectory 2
-	}
-
-	/* Verify reordered data */
-	//print_train_vecs(train_vectors, natoms, num_data, "train.txt");
-
-	/* Train svm */
-	train_trajA(train_vectors, targets, natoms, num_data);
-
-	/* Cleanup */
-	gmx_fio_close(traj1);
-	gmx_fio_close(traj2);
-	sfree(targets);
-	// Don't free train_vectors memory because svm_train did something to it? Trying to free causes error
-}
-
-/*
- * Reads 2 xtc files first, then reorders data directly into svm_problem and then calls train.
- * (Non-sequential read, sequential write)
- */
-void xtc_train(const char *traj_file1, const char *traj_file2) {
 	struct svm_problem *probs; // Array of svm problems for training
 	double *targets; // Array of classification labels (Trajectory -1 or 1)
+	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 
-	/* Trajectory data */
-	t_fileio *traj1 = NULL, *traj2 = NULL;
-	int natoms, step;
-	real t, prec;
-	matrix box;
-	rvec **pos1, **pos2;
-	gmx_bool b0k;
-	int num_frames = 0, est_frames = FRAMESTEP, i;
+	rvec **pos1, **pos2; // Trajectory position vectors
+	int nframes, nframes2, natoms, natoms2, num_data, i;
 
-	snew(pos1, est_frames);
-	snew(pos2, est_frames);
+	switch(fn2ftp(traj_file1)) {
+		case efXTC:
+			read_xtc(traj_file1, &pos1, &nframes, &natoms);
+			break;
+		case efTRR:
+			read_trr(traj_file1, &pos1, &nframes, &natoms);
+			break;
+		case efPDB:
+			// read_pdb(traj_file1, &pos1, &natoms);
+			break;
+		default:
+			log_fatal(FARGS, io_error);
+	}
 
-	/* Open trajectory files and get initial data */
-	traj1 = gmx_fio_open(traj_file1, "rb");
-	traj2 = gmx_fio_open(traj_file2, "rb");
-	read_first_xtc(traj1, &natoms, &step, &t, box, &(pos1[0]), &prec, &b0k);
-	read_first_xtc(traj2, &natoms, &step, &t, box, &(pos2[0]), &prec, &b0k);
+	switch(fn2ftp(traj_file2)) {
+		case efXTC:
+			read_xtc(traj_file2, &pos2, &nframes2, &natoms2);
+			break;
+		case efTRR:
+			read_trr(traj_file2, &pos2, &nframes2, &natoms2);
+			break;
+		case efPDB:
+			// read_pdb(traj_file2, &pos2, &natoms);
+			break;
+		default:
+			log_fatal(FARGS, io_error);
+	}
 
-	do {
-		num_frames++;
-		if(num_frames >= est_frames) {
-			est_frames += FRAMESTEP;
-			srenew(pos1, est_frames);
-			srenew(pos2, est_frames);
-		}
-		snew(pos1[num_frames], natoms);
-		snew(pos2[num_frames], natoms);
-	} while(read_next_xtc(traj1, natoms, &step, &t, box, pos1[num_frames], &prec, &b0k) 
-		&& read_next_xtc(traj2, natoms, &step, &t, box, pos2[num_frames], &prec, &b0k));
+	/* In case input files have different numbers of frames or atoms */
+	nframes = nframes2 < nframes ? nframes2 : nframes;
+	natoms = natoms2 < natoms ? natoms2 : natoms;
+
+	/* Verify read data */
+	// print_traj(pos1, nframes, natoms, "traj1.txt");
+	// print_traj(pos2, nframes, natoms, "traj2.txt");
+
+	num_data = nframes * 2;
 
 	/* Build targets array with classification labels */
-	int num_data = num_frames * 2;
 	snew(targets, num_data);
-	for(i = 0; i < num_frames; i++) {
+	for(i = 0; i < nframes; i++) {
 		targets[i] = LABEL1; // trajectory 1
 	}
 	for(; i < num_data; i++) {
 		targets[i] = LABEL2; // trajectory 2
 	}
-
-	/* Verify reordered data */
-	// print_traj(pos1, num_frames, natoms, "traj1.txt");
-	// print_traj(pos2, num_frames, natoms, "traj2.txt");
 
 	/* Construct svm problems */
 	snew(probs, natoms);
@@ -250,8 +135,8 @@ void xtc_train(const char *traj_file1, const char *traj_file2) {
 		probs[cur_atom].y = targets;
 		snew(probs[cur_atom].x, num_data);
 		// Insert positions from traj1
-		for(cur_frame = 0; cur_frame < num_frames; cur_frame++) {
-			snew(probs[cur_atom].x[cur_frame], NUMNODE);
+		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
+			snew(probs[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
 				probs[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
 				probs[cur_atom].x[cur_frame][i].value = pos1[cur_frame][cur_atom][i];
@@ -259,8 +144,8 @@ void xtc_train(const char *traj_file1, const char *traj_file2) {
 			probs[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
 		}
 		// Insert positions from traj2
-		for(cur_frame = 0, cur_data = num_frames; cur_frame < num_frames; cur_frame++, cur_data++) {
-			snew(probs[cur_atom].x[cur_data], NUMNODE);
+		for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
+			snew(probs[cur_atom].x[cur_data], 4);
 			for(i = 0; i < 3; i++) {
 				probs[cur_atom].x[cur_data][i].index = i;
 				probs[cur_atom].x[cur_data][i].value = pos2[cur_frame][cur_atom][i];
@@ -269,70 +154,19 @@ void xtc_train(const char *traj_file1, const char *traj_file2) {
 		}
 	}
 
-	/* Original vector arrays no longer needed */
-	for(i = 0; i < num_frames; i++) {
+	/* No longer need original vectors */
+	for(i = 0; i < nframes; i++) {
 		sfree(pos1[i]);
 		sfree(pos2[i]);
 	}
 	sfree(pos1);
 	sfree(pos2);
 
-	/* Verify problem data */
-	/*struct svm_node ***train_vectors;
-	snew(train_vectors, natoms);
-	for(i = 0; i < natoms; i++) {
-		train_vectors[i] = probs[i].x;
-	}
-	print_train_vecs(train_vectors, natoms, targets, num_data, "train.txt");
-	sfree(train_vectors);*/
-
-	/* Train svm */
+	/* Train SVM */
 	train_traj(probs, natoms);
 
-	/* Cleanup */
-	gmx_fio_close(traj1);
-	gmx_fio_close(traj2);
-	sfree(probs);
+	sfree(probs); // Don't free the data within probs, will cause error
 	sfree(targets);
-}
-
-void train_trajA(struct svm_node ***data, double *targets, int natoms, int num_data) {
-	struct svm_problem *probs; // Array of svm problems for training
-	struct svm_parameter param; // Parameters used for training
-	struct svm_model **models; // Array of svm models produced by training
-	int i;
-
-	snew(probs, natoms);
-	snew(models, natoms);
-
-	/* Construct svm problems */
-	for(i = 0; i < natoms; i++) {
-		probs[i].l = num_data;
-		probs[i].y = targets;
-		probs[i].x = data[i];
-	}
-	
-	/* Set svm parameters */
-	param.svm_type = C_SVC;
-	param.kernel_type = RBF;
-	param.gamma = 3;
-	param.cache_size = 100;
-	param.eps = 0.001;
-	param.C = 1;
-	param.nr_weight = 0;
-	param.shrinking = 1;
-	param.probability = 0;
-
-	/* Train svm */
-	for(i = 0; i < natoms; i++) {
-		models[i] = svm_train(&(probs[i]), &param);
-	}
-
-	/* Verify data */
-	// save_print_models(models, natoms, "modeldata.txt");
-
-	sfree(probs);
-	sfree(models);
 }
 
 void train_traj(struct svm_problem *probs, int num_probs) {
@@ -359,91 +193,7 @@ void train_traj(struct svm_problem *probs, int num_probs) {
 	}
 
 	/* Verify data */
-	//save_print_models(models, num_probs, "modeldata.txt");
+	save_print_models(models, num_probs, "modeldata.txt");
 
 	sfree(models);
-}
-
-/********************************************************
- * Test/debug functions
- ********************************************************/
-
-/*
- * Prints the given trajectory data to a text file with the given name
- */
-void print_traj(rvec **pos, int nframes, int natoms, const char *fname) {
-	int fr, x;
-	FILE *f = fopen(fname, "w");
-
-	for(fr = 0; fr < nframes; fr++) {
-		fprintf(f, "\nFrame %d\n", fr);
-		for(x = 0; x < natoms; x++) {
-			fprintf(f, "%d: %f %f %f\n", x, pos[fr][x][0], pos[fr][x][1], pos[fr][x][2]);
-		}
-	}
-
-	fclose(f);
-}
-
-/*
- * Prints reordered trajectory training data to a text file with the given name
- */
-void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname) {
-	int i, j, k;
-	FILE *f = fopen(fname, "w");
-
-	for(i = 0; i < natoms; i++) {
-		fprintf(f, "\nAtom %d:\n", i + 1);
-		for(j = 0; j < n_data; j++) {
-			fprintf(f, "\nData %d Traj %f: ", j, targets[j]);
-			for(k = 0; k < 3; k++) {
-				fprintf(f, "%d:%f ", train_vectors[i][j][k].index, train_vectors[i][j][k].value);
-			}
-			fprintf(f, "%d\n", train_vectors[i][j][3].index);
-		}
-	}
-
-	fclose(f);
-}
-
-/*
- * Saves the given svm models in model files and writes their data to a text file with the given name
- */
-void save_print_models(struct svm_model **models, int n, const char *fname) {
-	char mod_fn[MODELFNLEN];
-	int i, j, nr_class, nr_sv, *labels, *sv_indices;
-	FILE *f = fopen(fname, "w");
-
-	for(i = 0; i < n; i++) {
-		fprintf(f, "Model %d:\n", i + 1);
-		fprintf(f, "SVM Type: %d\n", svm_get_svm_type(models[i]));
-		fprintf(f, "Number of classes: %d\n", nr_class = svm_get_nr_class(models[i]));
-		
-		snew(labels, nr_class);
-		svm_get_labels(models[i], labels);
-		fprintf(f, "Labels: ");
-		for(j = 0; j < nr_class; j++) {
-			fprintf(f, "%d ", labels[j]);
-		}
-		fprintf(f, "\n");
-		sfree(labels);
-
-		fprintf(f, "Number of support vectors: %d\n", nr_sv = svm_get_nr_sv(models[i]));
-
-		snew(sv_indices, nr_sv);
-		svm_get_sv_indices(models[i], sv_indices);
-		fprintf(f, "SV Indices: ");
-		for(j = 0; j < nr_sv; j++) {
-			fprintf(f, "%d ", sv_indices[j]);
-		}
-		fprintf(f, "\n");
-		sfree(sv_indices);
-
-		fprintf(f, "\n");
-
-		sprintf(mod_fn, "trajmodel%d", i + 1);
-		svm_save_model(mod_fn, models[i]);
-	}
-
-	fclose(f);
 }

@@ -94,6 +94,27 @@ void read_trr(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
 	gmx_fio_close(traj);
 }
 
+void read_pdb(const char *pdb_fname, rvec **x, int *natoms) {
+	FILE *pdb_file;
+	char *title;
+	t_atoms atoms;
+	rvec *pos;
+	int ePBC;
+	matrix box;
+	gmx_bool bChange = FALSE;
+	
+	pdb_file = fopen(pdb_fname, "r");
+	get_pdb_coordnum(pdb_file, natoms);
+	fclose(pdb_file);
+	
+	init_t_atoms(&atoms, *natoms, FALSE);
+	snew(pos, *natoms);
+	
+	read_pdb_conf(pdb_fname, title, &atoms, pos, &ePBC, box, bChange, NULL);
+	print_log("%s %d\n", pdb_fname, *natoms);
+	sfree(pos);
+}
+
 void copy_pdb(const char *in_name, const char *out_name) {
 	FILE *in_pdb;
 	char *title;

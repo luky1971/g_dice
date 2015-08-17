@@ -41,6 +41,7 @@
 
 #include "confio.h"
 #include "gmxfio.h"
+#include "pdbio.h"
 #include "smalloc.h"
 #include "statutil.h"
 #include "svutils.h"
@@ -53,7 +54,8 @@ void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
 
 void read_trr(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
 
-void copy_pdb(const char *in_name, const char *out_name);
+void read_pdb(const char *pdb_fname, rvec **x, int *natoms);
+
 void copy_ndx(const char *in_name, int num_groups);
 
 #endif

@@ -45,6 +45,7 @@
 #include "macros.h"
 #include "smalloc.h"
 #include "statutil.h"
+#include "svm.h"
 #include "typedefs.h"
 
 /* Enumeration of input and output files */
@@ -71,5 +72,30 @@ void print_log(char const *fmt, ...);
  * Hint: Use FARGS for the first 3 arguments.
  */
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
+
+
+/********************************************************
+ * Test/debug functions
+ ********************************************************/
+
+/*
+ * Prints the given 2D array of vectors to a text file with the given name
+ */
+void print_traj(rvec **x, int nframes, int natoms, const char *fname);
+
+/*
+ * Prints the given array of vectors to a text file with the given name
+ */
+void print_vecs(rvec *x, int natoms, const char *fname);
+
+/*
+ * Prints reordered trajectory training nodes to a text file with the given name
+ */
+void print_train_vecs(struct svm_node ***train_vectors, int natoms, double *targets, int n_data, const char *fname);
+
+/*
+ * Saves the given svm models in model files and writes their data to a text file with the given name
+ */
+void save_print_models(struct svm_model **models, int n, const char *fname);
 
 #endif

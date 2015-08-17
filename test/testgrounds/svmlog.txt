@@ -225,3 +225,13 @@ svmanalys run: 8-16-2015 18:22:22
 Reading trr.
 Reading trr.
 Execution time: 125886
+
+svutils.c run: 8-16-2015 18:43:44
+Reading trr.
+Reading trr.
+Execution time: 136517
+
+svmanalys run: 8-16-2015 18:49:59
+Reading xtc.
+Reading xtc.
+Execution time: 115648
