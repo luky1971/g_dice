@@ -46,6 +46,7 @@
 
 #define LABEL1 -1 // Classification label for trajectory 1
 #define LABEL2 1 // Classification label for trajectory 2
+#define SHRINK 1 // Whether or not to use shrinking heuristics in svm_train
 
 void svmanalys(const char *traj_file1, const char *traj_file2);
 void train_traj(struct svm_problem *probs, int num_probs);
@@ -107,14 +108,14 @@ void svmanalys(const char *traj_file1, const char *traj_file2) {
 		default:
 			log_fatal(FARGS, io_error);
 	}
-
+	
 	/* In case input files have different numbers of frames or atoms */
 	nframes = nframes2 < nframes ? nframes2 : nframes;
 	natoms = natoms2 < natoms ? natoms2 : natoms;
 
 	/* Verify read data */
-	// print_traj(pos1, nframes, natoms, "traj1.txt");
-	// print_traj(pos2, nframes, natoms, "traj2.txt");
+	print_traj(pos1, nframes, natoms, "traj1.txt");
+	print_traj(pos2, nframes, natoms, "traj2.txt");
 
 	num_data = nframes * 2;
 
@@ -184,7 +185,7 @@ void train_traj(struct svm_problem *probs, int num_probs) {
 	param.eps = 0.001;
 	param.C = 1;
 	param.nr_weight = 0;
-	param.shrinking = 1;
+	param.shrinking = SHRINK;
 	param.probability = 0;
 
 	/* Train svm */

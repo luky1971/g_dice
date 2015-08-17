@@ -115,28 +115,6 @@ void read_pdb(const char *pdb_fname, rvec **x, int *natoms) {
 	sfree(pos);
 }
 
-void copy_pdb(const char *in_name, const char *out_name) {
-	FILE *in_pdb;
-	char *title;
-	t_atoms atoms;
-	rvec *x;
-	int natoms, ePBC;
-	matrix box;
-	gmx_bool bChange = FALSE;
-	
-	in_pdb = fopen(in_name, "r");
-	get_pdb_coordnum(in_pdb, &natoms);
-	fclose(in_pdb);
-	
-	init_t_atoms(&atoms, natoms, FALSE);
-	snew(x, natoms);
-	
-	read_pdb_conf(in_name, title, &atoms, x, &ePBC, box, bChange, NULL);
-	write_sto_conf(out_name, title, &atoms, x, NULL, ePBC, box);
-	
-	sfree(x);
-}
-
 void copy_ndx(const char *in_name, int num_groups) {
 	int *isize;
 	atom_id **indx;

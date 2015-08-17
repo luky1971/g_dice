@@ -27,4 +27,4 @@ svutils.o: svutils.c svutils.h
 	gcc -c svutils.c -I$(INCGRO) -I$(SVM)
 
 svio.o: svio.c svio.h
-	gcc -c svio.c -I$(INCGRO)
+	gcc -c svio.c -I$(INCGRO) -I$(SVM)
