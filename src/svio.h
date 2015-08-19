@@ -34,6 +34,7 @@
 
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
+ * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
 
 #ifndef _svio_h

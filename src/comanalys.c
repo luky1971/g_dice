@@ -33,8 +33,9 @@
  * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 
  * comanalys is a program for calculating the center of mass of particles in a GROMACS trajectory file.
- * Written by Ahnaf Siddiqui and Dr. Sameer Varma.
+ * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
+ * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
  
 #include "svutils.h"

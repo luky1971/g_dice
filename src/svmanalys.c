@@ -35,6 +35,7 @@
  * svmanalys is a program for analyzing trajectory files produced by GROMACS using support vector machines.
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
+ * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
 
 #include <stdlib.h>
@@ -46,6 +47,8 @@
 
 #define LABEL1 -1 // Classification label for trajectory 1
 #define LABEL2 1 // Classification label for trajectory 2
+#define COST 1e12 // C parameter for svm_train
+#define GAMMA 0.01 // Gamma parameter for svm_train
 #define SHRINK 1 // Whether or not to use shrinking heuristics in svm_train
 
 void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_file1, const char *ndx_file2);
@@ -66,7 +69,8 @@ int main(int argc, char *argv[]) {
 	
 	/* Call analysis function on input files */
 	clock_t start = clock();
-	svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
+	//svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
+	print_log("C: %f g: %f\n", COST, GAMMA);
 	clock_t end = clock();
 	print_log("Execution time: %d\n", end - start);
 
@@ -233,10 +237,10 @@ void train_traj(struct svm_problem *probs, int num_probs) {
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
 	param.kernel_type = RBF;
-	param.gamma = 3;
+	param.gamma = GAMMA;
 	param.cache_size = 100;
 	param.eps = 0.001;
-	param.C = 1;
+	param.C = COST;
 	param.nr_weight = 0;
 	param.shrinking = SHRINK;
 	param.probability = 0;
