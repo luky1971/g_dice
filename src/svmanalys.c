@@ -32,7 +32,7 @@
  * And Hey:
  * Gallium Rubidium Oxygen Manganese Argon Carbon Silicon
 
- * svmanalys is a program for analyzing trajectory files produced by GROMACS using support vector machines.
+ * svmanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
@@ -49,15 +49,16 @@
 #define LABEL2 1 // Classification label for trajectory 2
 #define COST 1e12 // C parameter for svm_train
 #define GAMMA 0.01 // Gamma parameter for svm_train
-#define SHRINK 1 // Whether or not to use shrinking heuristics in svm_train
 
 void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_file1, const char *ndx_file2);
-void train_traj(struct svm_problem *probs, int num_probs);
+void train_traj(struct svm_problem *probs, int num_probs, struct svm_model **models);
+void calc_eta(struct svm_model **models, int num_models, int num_frames, double *eta);
+void print_eta(double *eta, int n, const char *fname);
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
-		"svmanalys analyzes trajectory files produced by GROMACS,",
-		"using support vector machine algorithms."
+		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
+		"It calculates eta values for trained atoms from two trajectories."
 	};
 #define NUMFILES 4 // The number of input files
 	const char *fnames[NUMFILES];
@@ -69,8 +70,7 @@ int main(int argc, char *argv[]) {
 	
 	/* Call analysis function on input files */
 	clock_t start = clock();
-	//svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
-	print_log("C: %f g: %f\n", COST, GAMMA);
+	svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
 	clock_t end = clock();
 	print_log("Execution time: %d\n", end - start);
 
@@ -80,13 +80,17 @@ int main(int argc, char *argv[]) {
 void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_file1, const char *ndx_file2) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 
-	/* Training data */
-	struct svm_problem *probs; // Array of svm problems for training
-	double *targets; // Array of classification labels (Trajectory -1 or 1)
-
 	/* Trajectory data */
 	rvec **pos1, **pos2; // Trajectory position vectors
-	int nframes, nframes2, natoms, natoms2, num_data, i;
+	int nframes, nframes2, natoms, natoms2, nvecs, i;
+
+	/* Training data */
+	struct svm_problem *probs; // svm problems for training
+	struct svm_model **models; // models produced by training
+	double *targets; // classification labels (Trajectory -1 or 1)
+
+	/* eta values */
+	double *eta;
 
 	switch(fn2ftp(traj_file1)) {
 		case efXTC:
@@ -137,10 +141,10 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 	/* If an index file was given, get atom group with indices that will be trained */
 	if(ndx_file1 != NULL) {
 		rd_index(ndx_file1, NUMGROUPS, isize, indx1, grp_names);
+		natoms = isize[0];
 	}
 	else { // If no index file, set default indices as 0 to natoms - 1
 		snew(indx1[0], natoms);
-		isize[0] = natoms;
 		for(i = 0; i < natoms; i++) {
 			indx1[0][i] = i;
 		}
@@ -149,7 +153,7 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 		snew(isize2, NUMGROUPS);
 		snew(indx2, NUMGROUPS);
 		rd_index(ndx_file2, NUMGROUPS, isize2, indx2, grp_names);
-		if(isize2[0] != isize[0]) {
+		if(isize2[0] != natoms) {
 			log_fatal(FARGS, "Given index groups have different numbers of atoms!\n");
 		}
 	}
@@ -158,29 +162,23 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 	}
 	sfree(grp_names);
 
-	/* Verify indices */
-	for(i = 0; i < isize[0]; i++) {
-		printf("%d: %d and %d\n", i, indx1[0][i], indx2[0][i]);
-	}
-
-	num_data = nframes * 2;
-
+	nvecs = nframes * 2;
 	/* Build targets array with classification labels */
-	snew(targets, num_data);
+	snew(targets, nvecs);
 	for(i = 0; i < nframes; i++) {
 		targets[i] = LABEL1; // trajectory 1
 	}
-	for(; i < num_data; i++) {
+	for(; i < nvecs; i++) {
 		targets[i] = LABEL2; // trajectory 2
 	}
 
 	/* Construct svm problems */
-	snew(probs, isize[0]);
+	snew(probs, natoms);
 	int cur_atom, cur_frame, cur_data;
-	for(cur_atom = 0; cur_atom < isize[0]; cur_atom++) {
-		probs[cur_atom].l = num_data;
+	for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
+		probs[cur_atom].l = nvecs;
 		probs[cur_atom].y = targets;
-		snew(probs[cur_atom].x, num_data);
+		snew(probs[cur_atom].x, nvecs);
 		// Insert positions from traj1
 		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
 			snew(probs[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
@@ -202,18 +200,15 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 	}
 
 	/* Verify problem data */
-	print_svm_probs(probs, isize[0], "probs.txt");
+	//print_svm_probs(probs, natoms, "probs.txt");
 
-	/* No longer need original vectors */
+	/* No longer need original vectors and index data */
 	for(i = 0; i < nframes; i++) {
 		sfree(pos1[i]);
 		sfree(pos2[i]);
 	}
 	sfree(pos1);
 	sfree(pos2);
-
-	/* Train SVM */
-	train_traj(probs, isize[0]);
 
 	sfree(isize);
 	sfree(indx1[0]);
@@ -223,16 +218,29 @@ void svmanalys(const char *traj_file1, const char *traj_file2, const char *ndx_f
 		sfree(indx2[0]);
 		sfree(indx2);
 	}
+
+	/* Train SVM */
+	snew(models, natoms);
+	train_traj(probs, natoms, models);
+
+	/* Verify models */
+	//save_print_models(models, natoms, "modeldata.txt");
+
+	/* Calculate eta values */
+	snew(eta, natoms);
+	calc_eta(models, natoms, nframes, eta);
+
+	print_eta(eta, natoms, "eta_atom.dat");
+
+	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error
+	sfree(models);
 	sfree(targets);
+	sfree(eta);
 }
 
-void train_traj(struct svm_problem *probs, int num_probs) {
+void train_traj(struct svm_problem *probs, int num_probs, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
-	struct svm_model **models; // Array of svm models produced by training
-	int i;
-
-	snew(models, num_probs);
 	
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
@@ -242,16 +250,30 @@ void train_traj(struct svm_problem *probs, int num_probs) {
 	param.eps = 0.001;
 	param.C = COST;
 	param.nr_weight = 0;
-	param.shrinking = SHRINK;
+	param.shrinking = 1;
 	param.probability = 0;
 
 	/* Train svm */
+	int i;
 	for(i = 0; i < num_probs; i++) {
 		models[i] = svm_train(&(probs[i]), &param);
 	}
+}
 
-	/* Verify data */
-	save_print_models(models, num_probs, "modeldata.txt");
+void calc_eta(struct svm_model **models, int num_models, int num_frames, double *eta) {
+	int i;
+	for(i = 0; i < num_models; i++) {
+		eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (double)num_frames);
+	}
+}
 
-	sfree(models);
+void print_eta(double *eta, int n, const char *fname) {
+	int i;
+	FILE *f = fopen(fname, "w");
+
+	for(i = 0; i < n; i++) {
+		fprintf(f, "%f\n", eta[i]);
+	}
+
+	fclose(f);
 }
