@@ -49,7 +49,7 @@
 #include "trnio.h"
 #include "xtcio.h"
 
-#define FRAMESTEP 500 // The number of new frames to reallocate by when expanding an array of length # of trajectory frames
+#define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
 void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
 

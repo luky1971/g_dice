@@ -249,3 +249,8 @@ void save_print_models(struct svm_model **models, int n, const char *fname) {
 
 	fclose(f);
 }
+
+// clock_t start = clock();
+// svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
+// clock_t end = clock();
+// print_log("Execution time: %d\n", end - start);

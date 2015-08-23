@@ -236,3 +236,41 @@ svmanalys run: 8-22-2015 15:1:56
 Reading xtc.
 Reading xtc.
 Execution time: 17350189
+
+svmanalys run: 8-22-2015 18:32:44
+Reading xtc.
+Reading xtc.
+Execution time: 222032
+
+svmanalys run: 8-22-2015 18:33:52
+Reading xtc.
+Reading xtc.
+Execution time: 17568305
+
+svmanalys run: 8-23-2015 1:5:53
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:6:37
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:7:22
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:7:52
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:8:21
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:10:9
+Reading xtc.
+Reading xtc.
+
+svmanalys run: 8-23-2015 1:10:35
+Reading trr.
+Reading trr.

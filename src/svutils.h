@@ -49,8 +49,8 @@
 #include "svm.h"
 #include "typedefs.h"
 
-/* Enumeration of input and output files */
-enum {TRAJ1, TRAJ2, NDX1, NDX2, COORD_PDB, COORD_DAT, RES_DAT, MAXFILES};
+/* Indices of filenames */
+enum {TRAJ1, TRAJ2, NDX1, NDX2, ETA_PDB, ETA_DAT, ETA_RES_DAT, MAX_FILES};
 
 /*
  * Gets file names from command line
