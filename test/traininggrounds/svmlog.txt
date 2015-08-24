@@ -274,3 +274,57 @@ Reading xtc.
 svmanalys run: 8-23-2015 1:10:35
 Reading trr.
 Reading trr.
+
+svmanalys run: 8-23-2015 21:42:4
+Reading trajectory.
+20 atoms.
+
+svmanalys run: 8-23-2015 21:43:7
+Reading trajectory.
+20 atoms.
+
+svmanalys run: 8-23-2015 21:43:18
+Reading trajectory.
+20 atoms.
+
+svmanalys run: 8-23-2015 22:49:5
+Reading trajectory.
+Reading trajectory.
+
+svmanalys run: 8-23-2015 22:51:32
+Reading trajectory.
+Reading trajectory.
+1999 frames.
+
+svmanalys run: 8-23-2015 22:53:22
+Reading trajectory.
+0 frames read.
+Reading trajectory.
+0 frames read.
+1999 frames.
+
+svmanalys run: 8-23-2015 22:55:3
+Reading trajectory.
+Reading trajectory.
+2000 frames.
+
+svmanalys run: 8-23-2015 22:56:37
+Reading trajectory.
+Reading trajectory.
+
+svmanalys run: 8-23-2015 23:0:8
+
+svmanalys run: 8-23-2015 23:0:46
+
+svmanalys run: 8-23-2015 23:6:16
+Fatal error in source file svmanalys.c line 160: Given index groups have different numbers of atoms!
+
+svmanalys run: 8-23-2015 23:10:19
+
+svmanalys run: 8-23-2015 23:11:59
+
+svmanalys run: 8-23-2015 23:22:19
+
+svmanalys run: 8-23-2015 23:23:17
+
+svmanalys run: 8-23-2015 23:24:7

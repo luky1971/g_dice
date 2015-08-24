@@ -130,7 +130,7 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
 }
 
 /********************************************************
- * Test/debug functions
+ * Data printing functions
  ********************************************************/
 
 /*

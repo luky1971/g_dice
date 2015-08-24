@@ -50,7 +50,7 @@
 #include "typedefs.h"
 
 /* Indices of filenames */
-enum {TRAJ1, TRAJ2, NDX1, NDX2, ETA_PDB, ETA_DAT, ETA_RES_DAT, MAX_FILES};
+enum {TRAJ1, TRAJ2, NDX1, NDX2, ETA_PDB, ETA_DAT, ETA_RES_DAT, NUMFILES};
 
 /*
  * Gets file names from command line
@@ -77,7 +77,7 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
 
 
 /********************************************************
- * Test/debug functions
+ * Data printing functions
  ********************************************************/
 
 /*

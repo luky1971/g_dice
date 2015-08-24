@@ -63,6 +63,7 @@ void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
 		snew((*x)[*nframes], *natoms);
 	} while(read_next_xtc(traj, *natoms, &step, &t, box, (*x)[*nframes], &prec, &b0k));
 	
+	sfree((*x)[*nframes]);
 	gmx_fio_close(traj);
 }
 

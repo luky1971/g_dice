@@ -42,20 +42,21 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
+static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
 static void init_log(const char *program);
 static void close_log(void);
 static void print_log(char const *fmt, ...);
 static void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 
 static FILE *out_log = NULL;
+static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
 		"It calculates eta values for trained atoms from two trajectories."
 	};
-	const char *fnames[MAX_FILES];
-	output_env_t oenv;
+	const char *fnames[NUMFILES];
 	real gamma = GAMMA, c = COST;
 	int nfiles, npa;
 
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
 
 void svmanalys(const char *fnames[], real gamma, real c) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
+	const char *ndx_error = "Given index groups have different numbers of atoms!\n";
 
 	/* Trajectory data */
 	rvec **x1, **x2; // Trajectory position vectors
@@ -106,41 +108,29 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	/* eta values */
 	double *eta;
 
+	/* Read trajectory files */
 	switch(fn2ftp(fnames[TRAJ1])) {
 		case efXTC:
-			read_xtc(fnames[TRAJ1], &x1, &nframes, &natoms);
-			break;
 		case efTRR:
-			read_trr(fnames[TRAJ1], &x1, &nframes, &natoms);
-			break;
 		case efPDB:
-			// read_pdb(fnames[TRAJ1], &x1, &natoms);
+			read_traj(fnames[TRAJ1], &x1, &nframes, &natoms);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
 	}
-
 	switch(fn2ftp(fnames[TRAJ2])) {
 		case efXTC:
-			read_xtc(fnames[TRAJ2], &x2, &nframes2, &natoms2);
-			break;
 		case efTRR:
-			read_trr(fnames[TRAJ2], &x2, &nframes2, &natoms2);
-			break;
 		case efPDB:
-			// read_pdb(fnames[TRAJ2], &x2, &natoms);
+			read_traj(fnames[TRAJ2], &x2, &nframes2, &natoms2);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
 	}
 
-	/* In case input files have different numbers of frames or atoms */
+	/* In case traj files have different numbers of frames or atoms */
 	nframes = nframes2 < nframes ? nframes2 : nframes;
 	natoms = natoms2 < natoms ? natoms2 : natoms;
-
-	/* Verify read data */
-	// print_traj(x1, nframes, natoms, "traj1.txt");
-	// print_traj(x2, nframes, natoms, "traj2.txt");
 
 	/* Index data */
 #define NUMGROUPS 1
@@ -168,7 +158,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 		snew(indx2, NUMGROUPS);
 		rd_index(fnames[NDX2], NUMGROUPS, isize2, indx2, grp_names);
 		if(isize2[0] != natoms) {
-			log_fatal(FARGS, "Given index groups have different numbers of atoms!\n");
+			log_fatal(FARGS, ndx_error);
 		}
 	}
 	else {
@@ -213,9 +203,6 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 		}
 	}
 
-	/* Verify problem data */
-	//print_svm_probs(probs, natoms, "probs.txt");
-
 	/* No longer need original vectors and index data */
 	for(i = 0; i < nframes; i++) {
 		sfree(x1[i]);
@@ -236,9 +223,6 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	/* Train SVM */
 	snew(models, natoms);
 	train_traj(probs, natoms, gamma, c, models);
-
-	/* Verify models */
-	//save_print_models(models, natoms, "modeldata.txt");
 
 	/* Calculate eta values */
 	snew(eta, natoms);
@@ -292,25 +276,16 @@ void print_eta(double *eta, int n, const char *fname) {
 	fclose(f);
 }
 
-/********************************************************
- * Trajectory reading functions
- ********************************************************/
-
-void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
-	print_log("Reading xtc.\n");
-	t_fileio *traj = NULL;
-	int step;
-	real t, prec;
+static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
+	t_trxstatus *status = NULL;
+	real t;
 	matrix box;
-	gmx_bool b0k;
 	int est_frames = FRAMESTEP;
 	*nframes = 0;
-	
-	traj = gmx_fio_open(traj_fname, "rb");
 
 	snew(*x, est_frames);
-	read_first_xtc(traj, natoms, &step, &t, box, &((*x)[0]), &prec, &b0k);
-	
+	*natoms = read_first_x(oenv, &status, traj_fname, &t, &((*x)[0]), box);
+
 	do {
 		(*nframes)++;
 		if(*nframes >= est_frames) {
@@ -318,59 +293,10 @@ void read_xtc(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
 			srenew(*x, est_frames);
 		}
 		snew((*x)[*nframes], *natoms);
-	} while(read_next_xtc(traj, *natoms, &step, &t, box, (*x)[*nframes], &prec, &b0k));
-	
-	gmx_fio_close(traj);
-}
+	} while(read_next_x(oenv, status, &t, *natoms, (*x)[*nframes], box));
 
-void read_trr(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
-	print_log("Reading trr.\n");
-	t_fileio *traj = NULL;
-	t_trnheader header;
-	gmx_bool b0k;
-	*nframes = 0;
-	int est_frames = FRAMESTEP;
-	
-	traj = gmx_fio_open(traj_fname, "rb");
-
-	snew(*x, est_frames);
-	while(fread_trnheader(traj, &header, &b0k)) {
-		if(*nframes >= est_frames) {
-			est_frames += FRAMESTEP;
-			srenew(*x, est_frames);
-		}
-		snew((*x)[*nframes], header.natoms);
-		if(fread_htrn(traj, &header, NULL, (*x)[*nframes], NULL, NULL)) {
-			(*nframes)++;
-		}
-		else {
-			break;
-		}
-	}
-	*natoms = header.natoms;
-	
-	gmx_fio_close(traj);
-}
-
-void read_pdb(const char *pdb_fname, rvec **x, int *natoms) {
-	FILE *pdb_file;
-	char *title;
-	t_atoms atoms;
-	rvec *pos;
-	int ePBC;
-	matrix box;
-	gmx_bool bChange = FALSE;
-	
-	pdb_file = fopen(pdb_fname, "r");
-	get_pdb_coordnum(pdb_file, natoms);
-	fclose(pdb_file);
-	
-	init_t_atoms(&atoms, *natoms, FALSE);
-	snew(pos, *natoms);
-	
-	read_pdb_conf(pdb_fname, title, &atoms, pos, &ePBC, box, bChange, NULL);
-	print_log("%s %d\n", pdb_fname, *natoms);
-	sfree(pos);
+	sfree((*x)[*nframes]);
+	close_trx(status);
 }
 
 /********************************************************
