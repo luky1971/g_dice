@@ -98,12 +98,11 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 
 	/* Trajectory data */
 	rvec **x1, **x2; // Trajectory position vectors
-	int nframes, nframes2, natoms, natoms2, nvecs, i;
+	int nframes, nframes2, natoms, natoms2, i;
 
 	/* Training data */
 	struct svm_problem *probs; // svm problems for training
-	struct svm_model **models; // models produced by training
-	double *targets; // classification labels (Trajectory -1 or 1)
+	struct svm_model **models; // pointers to models produced by training
 
 	/* eta values */
 	double *eta;
@@ -142,7 +141,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(indx1, NUMGROUPS);
 	snew(grp_names, NUMGROUPS);
 
-	/* If an index file was given, get atom group with indices that will be trained */
+	// If an index file was given, get atom group with indices that will be trained
 	if(fnames[NDX1] != NULL) {
 		rd_index(fnames[NDX1], NUMGROUPS, isize, indx1, grp_names);
 		natoms = isize[0];
@@ -166,42 +165,8 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	}
 	sfree(grp_names);
 
-	nvecs = nframes * 2;
-	/* Build targets array with classification labels */
-	snew(targets, nvecs);
-	for(i = 0; i < nframes; i++) {
-		targets[i] = LABEL1; // trajectory 1
-	}
-	for(; i < nvecs; i++) {
-		targets[i] = LABEL2; // trajectory 2
-	}
-
 	/* Construct svm problems */
-	snew(probs, natoms);
-	int cur_atom, cur_frame, cur_data;
-	for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
-		probs[cur_atom].l = nvecs;
-		probs[cur_atom].y = targets;
-		snew(probs[cur_atom].x, nvecs);
-		// Insert positions from traj1
-		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
-			snew(probs[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
-			for(i = 0; i < 3; i++) {
-				probs[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
-				probs[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[0][cur_atom]][i];
-			}
-			probs[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
-		}
-		// Insert positions from traj2
-		for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
-			snew(probs[cur_atom].x[cur_data], 4);
-			for(i = 0; i < 3; i++) {
-				probs[cur_atom].x[cur_data][i].index = i;
-				probs[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[0][cur_atom]][i];
-			}
-			probs[cur_atom].x[cur_data][i].index = -1;
-		}
-	}
+	traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, natoms, &probs);
 
 	/* No longer need original vectors and index data */
 	for(i = 0; i < nframes; i++) {
@@ -233,13 +198,54 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error
 	sfree(models);
-	sfree(targets);
 	sfree(eta);
+}
+
+void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
+	int nvecs = nframes * 2;
+	int i;
+	double *targets; // classification labels (Trajectory -1 or 1)
+
+	/* Build targets array with classification labels */
+	snew(targets, nvecs);
+	for(i = 0; i < nframes; i++) {
+		targets[i] = LABEL1; // trajectory 1
+	}
+	for(; i < nvecs; i++) {
+		targets[i] = LABEL2; // trajectory 2
+	}
+
+	/* Construct svm problems */
+	snew(*probs, natoms);
+	int cur_atom, cur_frame, cur_data;
+	for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
+		(*probs)[cur_atom].l = nvecs;
+		(*probs)[cur_atom].y = targets;
+		snew((*probs)[cur_atom].x, nvecs);
+		// Insert positions from traj1
+		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
+			snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
+			for(i = 0; i < 3; i++) {
+				(*probs)[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
+				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i];
+			}
+			(*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
+		}
+		// Insert positions from traj2
+		for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
+			snew((*probs)[cur_atom].x[cur_data], 4);
+			for(i = 0; i < 3; i++) {
+				(*probs)[cur_atom].x[cur_data][i].index = i;
+				(*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i];
+			}
+			(*probs)[cur_atom].x[cur_data][i].index = -1;
+		}
+	}
 }
 
 void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
-	
+
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
 	param.kernel_type = RBF;
