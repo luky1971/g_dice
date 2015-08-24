@@ -299,7 +299,7 @@ static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *nato
 			srenew(*x, est_frames);
 		}
 		snew((*x)[*nframes], *natoms);
-	} while(read_next_x(oenv, status, &t, *natoms, (*x)[*nframes], box));
+	} while(read_next_x(oenv, status, &t, (*x)[*nframes], box));
 
 	sfree((*x)[*nframes]);
 	close_trx(status);

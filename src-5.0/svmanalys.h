@@ -46,9 +46,10 @@
 #include <stdlib.h>
 #include "gmx_fatal.h"
 #include "macros.h"
+#include "pargs.h"
 #include "smalloc.h"
-#include "statutil.h"
 #include "svm.h"
+#include "trxio.h"
 
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
