@@ -189,6 +189,12 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(models, natoms);
 	train_traj(probs, natoms, gamma, c, models);
 
+	char prob_fn[30];
+	for(i = 0; i < natoms; i++) {
+		sprintf(prob_fn, "training/mu_atom%d", i + 1);
+		svm_prob2file(&(probs[i]), prob_fn);
+	}
+
 	/* Calculate eta values */
 	snew(eta, natoms);
 	calc_eta(models, natoms, nframes, eta);
@@ -197,6 +203,10 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 
 	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error
+	for(i = 0; i < natoms; i++) {
+		svm_free_model_content(models[i]);
+		svm_free_and_destroy_model(&(models[i]));
+	}
 	sfree(models);
 	sfree(eta);
 }
@@ -204,7 +214,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
 	int nvecs = nframes * 2;
 	int i;
-	double *targets; // classification labels (Trajectory -1 or 1)
+	double *targets; // trajectory classification labels
 
 	/* Build targets array with classification labels */
 	snew(targets, nvecs);
@@ -226,7 +236,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
 			snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
-				(*probs)[cur_atom].x[cur_frame][i].index = i; // Position components are indexed 0:x, 1:y, 2:z
+				(*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 1:x, 2:y, 3:z
 				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i];
 			}
 			(*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
@@ -235,7 +245,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 		for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
 			snew((*probs)[cur_atom].x[cur_data], 4);
 			for(i = 0; i < 3; i++) {
-				(*probs)[cur_atom].x[cur_data][i].index = i;
+				(*probs)[cur_atom].x[cur_data][i].index = i + 1;
 				(*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i];
 			}
 			(*probs)[cur_atom].x[cur_data][i].index = -1;
@@ -271,11 +281,11 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, double 
 	}
 }
 
-void print_eta(double *eta, int n, const char *fname) {
+void print_eta(double *eta, int num_etas, const char *eta_fname) {
 	int i;
-	FILE *f = fopen(fname, "w");
+	FILE *f = fopen(eta_fname, "w");
 
-	for(i = 0; i < n; i++) {
+	for(i = 0; i < num_etas; i++) {
 		fprintf(f, "%f\n", eta[i]);
 	}
 
@@ -303,6 +313,20 @@ static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *nato
 
 	sfree((*x)[*nframes]);
 	close_trx(status);
+}
+
+void svm_prob2file(const struct svm_problem *prob, const char *fname) {
+	int i, j, n = prob->l;
+	FILE *f = fopen(fname, "w");
+	for(i = 0; i < n; i++) {
+		fprintf(f, "%d", (int)(prob->y[i]));
+		for(j = 0; j < 3; j++) {
+			fprintf(f, " %d:%f", prob->x[i][j].index, prob->x[i][j].value);
+		}
+		fprintf(f, "\n");
+	}
+
+	fclose(f);
 }
 
 /********************************************************

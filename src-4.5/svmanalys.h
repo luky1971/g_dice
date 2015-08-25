@@ -82,4 +82,6 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, double 
 
 void print_eta(double *eta, int n, const char *fname);
 
+void svm_prob2file(const struct svm_problem *prob, const char *fname);
+
 #endif
