@@ -51,8 +51,8 @@
 #include "svm.h"
 #include "trxio.h"
 
-#define LABEL1 -1 // classification label for trajectory 1
-#define LABEL2 1 // classification label for trajectory 2
+#define LABEL1 1 // classification label for trajectory 1
+#define LABEL2 -1 // classification label for trajectory 2
 #define GAMMA 0.01 // default gamma parameter for svm_train
 #define COST 1e12 // default C parameter for svm_train
 
