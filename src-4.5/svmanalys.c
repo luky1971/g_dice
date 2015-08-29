@@ -189,12 +189,6 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(models, natoms);
 	train_traj(probs, natoms, gamma, c, models);
 
-	char prob_fn[30];
-	for(i = 0; i < natoms; i++) {
-		sprintf(prob_fn, "training/mu_atom%d", i + 1);
-		svm_prob2file(&(probs[i]), prob_fn);
-	}
-
 	/* Calculate eta values */
 	snew(eta, natoms);
 	calc_eta(models, natoms, nframes, eta);
@@ -259,11 +253,15 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, st
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
 	param.kernel_type = RBF;
+	param.degree = 3;
 	param.gamma = gamma;
-	param.cache_size = 100;
+	param.coef0 = 0.0;
+	param.cache_size = 100.0;
 	param.eps = 0.001;
 	param.C = c;
 	param.nr_weight = 0;
+	param.nu = 0.5;
+	param.p = 0.1;
 	param.shrinking = 1;
 	param.probability = 0;
 

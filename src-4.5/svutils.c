@@ -250,7 +250,42 @@ void save_print_models(struct svm_model **models, int n, const char *fname) {
 	fclose(f);
 }
 
+
+// static void svm_param2file(const struct svm_parameter *param, const char *fname) {
+// 	FILE *f = fopen(fname, "w");
+
+// 	fprintf(f, "svm_type: %d\n", param->svm_type);
+// 	fprintf(f, "kernel_type: %d\n", param->kernel_type);
+// 	fprintf(f, "degree: %d\n", param->degree);
+// 	fprintf(f, "gamma: %f\n", param->gamma);
+// 	fprintf(f, "coef0: %f\n", param->coef0);
+// 	fprintf(f, "cache_size: %f\n", param->cache_size);
+// 	fprintf(f, "eps: %f\n", param->eps);
+// 	fprintf(f, "C: %f\n", param->C);
+// 	fprintf(f, "nr_weight: %d\n", param->nr_weight);
+
+// 	int i;
+// 	for(i = 0; i < param->nr_weight; i++) {
+// 		fprintf(f, "Weight %d: %f\n", param->weight_label[i], param->weight[i]);
+// 	}
+
+// 	fprintf(f, "nu: %f\n", param->nu);
+// 	fprintf(f, "p: %f\n", param->p);
+// 	fprintf(f, "shrinking: %d\n", param->shrinking);
+// 	fprintf(f, "probability: %d\n", param->probability);
+
+// 	fclose(f);
+// }
+
+/* Measure execution time */
 // clock_t start = clock();
 // svmanalys(fnames[0], fnames[1], fnames[2], fnames[3]);
 // clock_t end = clock();
 // print_log("Execution time: %d\n", end - start);
+
+/* Produce svm problem training files */
+// char prob_fn[30];
+// for(i = 0; i < natoms; i++) {
+// 	sprintf(prob_fn, "training/mu_atom%d", i + 1);
+// 	svm_prob2file(&(probs[i]), prob_fn);
+// }
