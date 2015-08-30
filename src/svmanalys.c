@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
 		"It calculates eta values for trained atoms from two trajectories."
 	};
-	const char *fnames[NUMFILES];
+	const char *fnames[eNUMFILES];
 	real gamma = GAMMA, c = COST;
 	int nfiles, npa;
 
@@ -83,11 +83,11 @@ int main(int argc, char *argv[]) {
 	parse_common_args(&argc, argv, 0, nfiles, fnm, 
 		npa, pa, asize(desc), desc, 0, NULL, &oenv);
 
-	fnames[TRAJ1] = opt2fn("-f1", nfiles, fnm);
-	fnames[TRAJ2] = opt2fn("-f2", nfiles, fnm);
-	fnames[NDX1] = opt2fn_null("-n1", nfiles, fnm);
-	fnames[NDX2] = opt2fn_null("-n2", nfiles, fnm);
-	fnames[ETA_DAT] = opt2fn("-eta_atom", nfiles, fnm);
+	fnames[eTRAJ1] = opt2fn("-f1", nfiles, fnm);
+	fnames[eTRAJ2] = opt2fn("-f2", nfiles, fnm);
+	fnames[eNDX1] = opt2fn_null("-n1", nfiles, fnm);
+	fnames[eNDX2] = opt2fn_null("-n2", nfiles, fnm);
+	fnames[eETA_DAT] = opt2fn("-eta_atom", nfiles, fnm);
 
 	svmanalys(fnames, gamma, c);
 
@@ -110,20 +110,20 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	double *eta;
 
 	/* Read trajectory files */
-	switch(fn2ftp(fnames[TRAJ1])) {
+	switch(fn2ftp(fnames[eTRAJ1])) {
 		case efXTC:
 		case efTRR:
 		case efPDB:
-			read_traj(fnames[TRAJ1], &x1, &nframes, &natoms);
+			read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
 	}
-	switch(fn2ftp(fnames[TRAJ2])) {
+	switch(fn2ftp(fnames[eTRAJ2])) {
 		case efXTC:
 		case efTRR:
 		case efPDB:
-			read_traj(fnames[TRAJ2], &x2, &nframes2, &natoms2);
+			read_traj(fnames[eTRAJ2], &x2, &nframes2, &natoms2);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
@@ -144,8 +144,8 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(grp_names, NUMGROUPS);
 
 	// If an index file was given, get atom group with indices that will be trained
-	if(fnames[NDX1] != NULL) {
-		rd_index(fnames[NDX1], NUMGROUPS, isize, indx1, grp_names);
+	if(fnames[eNDX1] != NULL) {
+		rd_index(fnames[eNDX1], NUMGROUPS, isize, indx1, grp_names);
 		natoms = isize[0];
 	}
 	else { // If no index file, set default indices as 0 to natoms - 1
@@ -154,10 +154,10 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 			indx1[0][i] = i;
 		}
 	}
-	if(fnames[NDX2] != NULL) {
+	if(fnames[eNDX2] != NULL) {
 		snew(isize2, NUMGROUPS);
 		snew(indx2, NUMGROUPS);
-		rd_index(fnames[NDX2], NUMGROUPS, isize2, indx2, grp_names);
+		rd_index(fnames[eNDX2], NUMGROUPS, isize2, indx2, grp_names);
 		if(isize2[0] != natoms) {
 			log_fatal(FARGS, ndx_error);
 		}
@@ -181,7 +181,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	sfree(isize);
 	sfree(indx1[0]);
 	sfree(indx1);
-	if(fnames[NDX2] != NULL) {
+	if(fnames[eNDX2] != NULL) {
 		sfree(isize2);
 		sfree(indx2[0]);
 		sfree(indx2);
@@ -195,7 +195,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(eta, natoms);
 	calc_eta(models, natoms, nframes, eta);
 
-	print_eta(eta, natoms, fnames[ETA_DAT]);
+	print_eta(eta, natoms, fnames[eETA_DAT]);
 
 	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error

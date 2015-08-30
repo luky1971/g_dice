@@ -63,7 +63,7 @@
 #define COST 1e12 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {TRAJ1, TRAJ2, NDX1, NDX2, ETA_DAT, NUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_DAT, eNUMFILES};
 
 
 void svmanalys(const char *fnames[], real gamma, real c);
