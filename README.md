@@ -1,4 +1,8 @@
 # svmanalys
+svmanalys analyzes GROMACS trajectory files using support vector machine algorithms and calculates eta values.
+
+The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
+
 To install:
 
 1. Install Gromacs version 4.5.x or later from http://www.gromacs.org.
@@ -17,4 +21,4 @@ If you must run `make install` without sudo privileges, you will need to set the
 
 If you are not using gcc, you will also need to set `CC` and `CXX` to your C compiler and C++ compiler commands respectively.
 
-After installing, run `svmanalys` to see its usage. Depending on your system and chosen installation directory, you may have to add svmanalys to your PATH. Google is your friend.
+After installing, run `svmanalys -h` to see its usage. Depending on your system and chosen installation directory, you may have to add svmanalys to your PATH. Google is your friend.
