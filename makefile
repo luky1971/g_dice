@@ -1,17 +1,18 @@
 CC=gcc
 CXX=g++
-INSTALL=/usr/local/bin
-SVM=../libsvm-3.20
+GROMACS=/usr/local/gromacs
 VGRO=5
+SVM=../libsvm-3.20
+INSTALL=/usr/local/bin
 
 ifeq ($(VGRO),5)
-INCGRO=-I/usr/local/gromacs/include/ -I/usr/local/gromacs/include/gromacs/utility -I/usr/local/gromacs/include/gromacs/fileio -I/usr/local/gromacs/include/gromacs/commandline -I/usr/local/gromacs/include/gromacs/legacyheaders
-LINKGRO=-L/usr/local/gromacs/lib/i386-linux-gnu
+INCGRO=-I$(GROMACS)/include/ -I$(GROMACS)/include/gromacs/utility -I$(GROMACS)/include/gromacs/fileio -I$(GROMACS)/include/gromacs/commandline -I$(GROMACS)/include/gromacs/legacyheaders
+LINKGRO=-L$(GROMACS)/lib/i386-linux-gnu
 LIBGRO=-lgromacs
 DEFV5=-D GRO_V5
 else
-INCGRO=-I/usr/local/gromacs/include/gromacs
-LINKGRO=-L/usr/local/gromacs/lib
+INCGRO=-I$(GROMACS)/include/gromacs
+LINKGRO=-L$(GROMACS)/lib
 LIBGRO=-lgmx
 DEFV5=
 endif
