@@ -15,6 +15,6 @@ If you do not have Gromacs version 5.x installed, you will need to set the makef
 
 If you must run `make install` without sudo privileges, you will need to set the `INSTALL` variable to a path that you can write to. The default install path is /usr/local/bin.
 
-If you are not using gcc, you will also need to set 'CC' and 'CXX' to your C compiler and C++ compiler commands respectively.
+If you are not using gcc, you will also need to set `CC` and `CXX` to your C compiler and C++ compiler commands respectively.
 
 After installing, run `svmanalys` to see its usage. Depending on your system and chosen installation directory, you may have to add svmanalys to your PATH. Google is your friend.
