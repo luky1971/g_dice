@@ -52,8 +52,8 @@
 #include "trxio.h"
 #else
 #include "statutil.h"
-#endif
 #include "gmx_fatal.h"
+#endif
 #include "smalloc.h"
 #include "svm.h"
 
