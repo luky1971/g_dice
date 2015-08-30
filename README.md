@@ -9,7 +9,7 @@ To install:
 
 2. Install libsvm from https://www.csie.ntu.edu.tw/~cjlin/libsvm/. Version 3.20 is officially supported. 
 
-3. Clone and `cd` to the 'svmanalys' repository.
+3. `git clone` and `cd` to the 'svmanalys' repository.
 
 3. Run `sudo make install` with the necessary arguments for your environment (see below).
 
