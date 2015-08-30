@@ -5,7 +5,7 @@ SVM=../libsvm-3.20
 VGRO=5
 
 ifeq ($(VGRO),5)
-INCGRO=-I/usr/local/gromacs/include/gromacs/utility -I/usr/local/gromacs/include/gromacs/fileio -I/usr/local/gromacs/include/gromacs/commandline
+INCGRO=-I/usr/local/gromacs/include/gromacs/utility -I/usr/local/gromacs/include/gromacs/fileio -I/usr/local/gromacs/include/gromacs/commandline -I/usr/local/gromacs/include/gromacs/legacyheaders
 LINKGRO=-L/usr/local/gromacs/lib/i386-linux-gnu
 LIBGRO=-lgromacs
 DEFV5=-D GRO_V5
