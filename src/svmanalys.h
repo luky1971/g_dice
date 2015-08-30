@@ -47,15 +47,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "macros.h"
+#include "smalloc.h"
+#include "svm.h"
 #ifdef GRO_V5
+#include "fatalerror.h"
 #include "pargs.h"
 #include "trxio.h"
 #else
-#include "statutil.h"
 #include "gmx_fatal.h"
+#include "statutil.h"
 #endif
-#include "smalloc.h"
-#include "svm.h"
 
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
