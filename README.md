@@ -7,7 +7,9 @@ To install:
 
 3. Clone and `cd` to this repository.
 
-3. Run `sudo make install` with the necessary arguments for your environment. If you do not have Gromacs version 5.x installed, you will need to set `VGRO` to the root Gromacs version number. You will also need to specify the installation directory of libsvm in the `SVM` variable. If Gromacs is installed in a non-default directory (ie not in /usr/local/gromacs) then you will have to set the `GROMACS` variable to the Gromacs installation directory containing the 'include' and 'lib' folders. For example, if you are running Gromacs 4.5.3 in its default installation and you have libsvm installed in /usr/local/libsvm-3.20, then you would run the following command:
+3. Run `sudo make install` with the necessary arguments for your environment (see below).
+
+If you do not have Gromacs version 5.x installed, you will need to set the makefile's `VGRO` variable to the root Gromacs version number. You will also need to specify the installation directory of libsvm in the `SVM` variable. If Gromacs is installed in a non-default directory (ie not in /usr/local/gromacs) then you will have to set the `GROMACS` variable to the Gromacs installation directory containing the 'include' and 'lib' folders. For example, if you are running Gromacs 4.5.3 in its default installation and you have libsvm installed in /usr/local/libsvm-3.20, then you would run the following command:
 
 `sudo make install VGRO=4 SVM=/usr/local/libsvm-3.20`
 
