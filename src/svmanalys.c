@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
 	};
 	const char *fnames[eNUMFILES];
 	real gamma = GAMMA, c = COST;
-	int nfiles, npa;
+	int npa;
+	gmx_bool optimize = FALSE;
 
 	init_log(argv[0]);
 
@@ -69,26 +70,32 @@ int main(int argc, char *argv[]) {
 		{efTRX, "-f2", "traj2.xtc", ffREAD},
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
+		{efDAT, "-eta_anal", "eta_anal.dat", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
 	};
 
 	t_pargs pa[] = {
 		{"-g", FALSE, etREAL, {&gamma}, "gamma parameter for svm-train"},
-		{"-c", FALSE, etREAL, {&c}, "C (cost) parameter for svm-train"}
+		{"-c", FALSE, etREAL, {&c}, "C (cost) parameter for svm-train"},
+		{"-opt", FALSE, etBOOL, {&optimize}, "Search for optimal C and gamma parameters with expected eta values given in -eta_anal"}
 	};
 
-	nfiles = asize(fnm);
 	npa = asize(pa);
 
-	parse_common_args(&argc, argv, 0, nfiles, fnm, 
+	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, 
 		npa, pa, asize(desc), desc, 0, NULL, &oenv);
 
-	fnames[eTRAJ1] = opt2fn("-f1", nfiles, fnm);
-	fnames[eTRAJ2] = opt2fn("-f2", nfiles, fnm);
-	fnames[eNDX1] = opt2fn_null("-n1", nfiles, fnm);
-	fnames[eNDX2] = opt2fn_null("-n2", nfiles, fnm);
-	fnames[eETA_DAT] = opt2fn("-eta_atom", nfiles, fnm);
+	fnames[eTRAJ1] = opt2fn("-f1", eNUMFILES, fnm);
+	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
+	fnames[eNDX1] = opt2fn_null("-n1", eNUMFILES, fnm);
+	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
+	fnames[eETA_ANAL] = opt2fn_null("-eta_anal", eNUMFILES, fnm);
+	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
+	if(optimize) {
+		optimize_params(fnames, &gamma, &c);
+	}
+	
 	svmanalys(fnames, gamma, c);
 
 	close_log();
@@ -195,7 +202,7 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	snew(eta, natoms);
 	calc_eta(models, natoms, nframes, eta);
 
-	print_eta(eta, natoms, fnames[eETA_DAT]);
+	print_eta(eta, natoms, fnames[eETA_ATOM]);
 
 	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error
@@ -205,6 +212,11 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	}
 	sfree(models);
 	sfree(eta);
+}
+
+void optimize_params(const char *fnames[], real *gamma, real *c) {
+	*gamma = 9001.0;
+	*c = 9002.0;
 }
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
@@ -233,7 +245,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 			snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
 				(*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
-				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i];
+				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0;
 			}
 			(*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
 		}
@@ -242,7 +254,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 			snew((*probs)[cur_atom].x[cur_data], 4);
 			for(i = 0; i < 3; i++) {
 				(*probs)[cur_atom].x[cur_data][i].index = i + 1;
-				(*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i];
+				(*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i] * 10.0;
 			}
 			(*probs)[cur_atom].x[cur_data][i].index = -1;
 		}

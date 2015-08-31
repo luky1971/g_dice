@@ -62,10 +62,10 @@
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
 #define GAMMA 0.01 // default gamma parameter for svm_train
-#define COST 1e12 // default C parameter for svm_train
+#define COST 10 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_DAT, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eETA_ANAL, eNUMFILES};
 
 
 void svmanalys(const char *fnames[], real gamma, real c);
@@ -74,6 +74,8 @@ void svmanalys(const char *fnames[], real gamma, real c);
  * which are stored in a file with name indicated by fnames[ETA_DAT].
  * See enum above for fnames[]. fnames[NDX1] and/or fnames[NDX2] can be NULL.
  */
+
+void optimize_params(const char *fnames[], real *gamma, real *c);
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
 	int nframes, int natoms, struct svm_problem **probs);
