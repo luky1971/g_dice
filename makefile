@@ -17,13 +17,24 @@ LIBGRO=-lgmx
 DEFV5=
 endif
 
-svmanalys: svmanalys.o
-	$(CXX) -o svmanalys svmanalys.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+.PHONY: all install clean
+
+all: svmanalys eta_anal 
 
 install: svmanalys
 	install svmanalys $(INSTALL)
 
-.PHONY: install
+svmanalys: svmanalys.o
+	$(CXX) -o svmanalys svmanalys.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+
+eta_anal: eta_anal.o
+	$(CXX) -o eta_anal eta_anal.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
 
 svmanalys.o: src/svmanalys.c src/svmanalys.h
 	$(CC) -c src/svmanalys.c $(INCGRO) -I$(SVM) $(DEFV5)
+
+eta_anal.o: src/eta_anal.c src/svmanalys.h
+	$(CC) -c src/eta_anal.c $(INCGRO) -I$(SVM) $(DEFV5)
+
+clean:
+	rm -f svmanalys.o eta_anal.o svmanalys eta_anal

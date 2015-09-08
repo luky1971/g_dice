@@ -4,7 +4,7 @@
 #define NUM_MU 20
 #define NUM_SIG 14
 
-void eta_anal(int natoms, const char *fname);
+void eta_anal(int num_mu, int num_sig, const char *mu_fname, const char *sig_fname);
 
 static output_env_t oenv = NULL;
 
