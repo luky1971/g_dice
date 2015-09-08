@@ -4,13 +4,13 @@
 #define NUM_MU 20
 #define NUM_SIG 14
 
-void calc_eta_anal(int natoms, const char *fname);
+void eta_anal(int natoms, const char *fname);
 
 static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
-		"calc_eta_anal calculates analytical eta values.",
+		"eta_anal calculates analytical eta values.",
 		"It produces two output files, for analytical mu changed etas and analytical sigma changed etas."
 	};
 	const char *mu_fname, *sig_fname;
@@ -32,11 +32,10 @@ int main(int argc, char *argv[]) {
 	mu_fname = opt2fn("-fmu", NUM_FILES, fnm);
 	sig_fname = opt2fn("-fsig", NUM_FILES, fnm);
 
-	calc_eta_anal(num_mu, num_sig, mu_fname, sig_fname);
-
+	eta_anal(num_mu, num_sig, mu_fname, sig_fname);
 }
 
-void calc_eta_anal(int num_mu, int num_sig, const char *mu_fname, const char *sig_fname) {
+void eta_anal(int num_mu, int num_sig, const char *mu_fname, const char *sig_fname) {
 	FILE *f_mu, *f_sig;
 	int i;
 
