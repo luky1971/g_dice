@@ -43,6 +43,7 @@
 #ifndef _svmanalys_h
 #define _svmanalys_h
 
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,14 +69,12 @@
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eETA_ANAL, eNUMFILES};
 
 
-void svmanalys(const char *fnames[], real gamma, real c);
+void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize);
 /* Trains the given trajectories in fnames[TRAJ1] and fnames[TRAJ2] 
  * using support vector machines and calculates their eta values,
  * which are stored in a file with name indicated by fnames[ETA_DAT].
  * See enum above for fnames[]. fnames[NDX1] and/or fnames[NDX2] can be NULL.
  */
-
-void optimize_params(const char *fnames[], real *gamma, real *c);
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
 	int nframes, int natoms, struct svm_problem **probs);
@@ -85,6 +84,8 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2,
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
  * x1 and x2 should each be size [nframes][natoms]. indx1 and indx2 should each be size [natoms].
  */
+
+void optimize_params(const char *fnames[], real *gamma, real *c);
 
 void train_traj(struct svm_problem *probs, int num_probs, 
 	real gamma, real c, struct svm_model **models);

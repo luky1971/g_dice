@@ -60,7 +60,6 @@ int main(int argc, char *argv[]) {
 	};
 	const char *fnames[eNUMFILES];
 	real gamma = GAMMA, c = COST;
-	int npa;
 	gmx_bool optimize = FALSE;
 
 	init_log(argv[0]);
@@ -80,10 +79,8 @@ int main(int argc, char *argv[]) {
 		{"-opt", FALSE, etBOOL, {&optimize}, "Search for optimal C and gamma parameters with expected eta values given in -eta_anal"}
 	};
 
-	npa = asize(pa);
-
 	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, 
-		npa, pa, asize(desc), desc, 0, NULL, &oenv);
+		asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
 
 	fnames[eTRAJ1] = opt2fn("-f1", eNUMFILES, fnm);
 	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
@@ -92,16 +89,12 @@ int main(int argc, char *argv[]) {
 	fnames[eETA_ANAL] = opt2fn_null("-eta_anal", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
-	if(optimize) {
-		optimize_params(fnames, &gamma, &c);
-	}
-	
-	svmanalys(fnames, gamma, c);
+	svmanalys(fnames, &gamma, &c, optimize);
 
 	close_log();
 }
 
-void svmanalys(const char *fnames[], real gamma, real c) {
+void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 	const char *ndx_error = "Given index groups have different numbers of atoms!\n";
 
@@ -194,9 +187,14 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 		sfree(indx2);
 	}
 
+	/* Optimize gamma and C parameters */
+	if(optimize) {
+		optimize_params(fnames, gamma, c);
+	}
+
 	/* Train SVM */
 	snew(models, natoms);
-	train_traj(probs, natoms, gamma, c, models);
+	train_traj(probs, natoms, *gamma, *c, models);
 
 	/* Calculate eta values */
 	snew(eta, natoms);
@@ -212,11 +210,6 @@ void svmanalys(const char *fnames[], real gamma, real c) {
 	}
 	sfree(models);
 	sfree(eta);
-}
-
-void optimize_params(const char *fnames[], real *gamma, real *c) {
-	*gamma = 9001.0;
-	*c = 9002.0;
 }
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
@@ -259,6 +252,10 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 			(*probs)[cur_atom].x[cur_data][i].index = -1;
 		}
 	}
+}
+
+void optimize_params(const char *fnames[], real *gamma, real *c) {
+	//TODO
 }
 
 void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
