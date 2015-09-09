@@ -1,6 +1,6 @@
 # etanalys
 etanalys analyzes GROMACS trajectory files using support vector machine algorithms and calculates eta values.
-Support vector machine training is provided by libsvm, copyright (c) 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
+Support vector machine training is provided by libsvm, &copy 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
 
 The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
 
