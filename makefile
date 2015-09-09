@@ -19,17 +19,17 @@ endif
 
 .PHONY: install clean 
 
-etanalys: etanalys.o svmanalys.o
-	$(CXX) -o etanalys etanalys.o svmanalys.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+etanalys: etanalys.o eta.o
+	$(CXX) -o etanalys etanalys.o eta.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
 
 install: etanalys
 	install etanalys $(INSTALL)
 
-etanalys.o: src/etanalys.c src/svmanalys.h
+etanalys.o: src/etanalys.c src/eta.h
 	$(CC) -c src/etanalys.c $(INCGRO) -I$(SVM) $(DEFV5)
 
-svmanalys.o: src/svmanalys.c src/svmanalys.h
-	$(CC) -c src/svmanalys.c $(INCGRO) -I$(SVM) $(DEFV5)
+eta.o: src/eta.c src/eta.h
+	$(CC) -c src/eta.c $(INCGRO) -I$(SVM) $(DEFV5)
 
 clean:
-	rm -f etanalys.o svmanalys.o etanalys
+	rm -f etanalys.o eta.o etanalys

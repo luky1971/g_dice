@@ -34,19 +34,19 @@
  * To help us fund GROMACS development, we humbly ask that you cite
  * the research papers on the package. Check out http://www.gromacs.org.
 
- * svmanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
+ * etanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
 
-#include "svmanalys.h"
+#include "eta.h"
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
 static FILE *out_log = NULL;
 
-void svmanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
+void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 	const char *ndx_error = "Given index groups have different numbers of atoms!\n";
 
@@ -158,6 +158,8 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 	int i;
 	double *targets; // trajectory classification labels
 
+	print_log("Constructing svm problems...\n");
+
 	/* Build targets array with classification labels */
 	snew(targets, nvecs);
 	for(i = 0; i < nframes; i++) {
@@ -198,6 +200,8 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
 
+	print_log("svm-training trajectory atoms...\n");
+
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
 	param.kernel_type = RBF;
@@ -222,6 +226,9 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, st
 
 void calc_eta(struct svm_model **models, int num_models, int num_frames, real *eta) {
 	int i;
+
+	print_log("Calculating eta values...\n");
+
 	for(i = 0; i < num_models; i++) {
 		eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (real)num_frames);
 	}
@@ -230,6 +237,8 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
 void save_eta(real *eta, int num_etas, const char *eta_fname) {
 	int i;
 	FILE *f = fopen(eta_fname, "w");
+
+	print_log("Saving eta values to %s...\n", eta_fname);
 
 	for(i = 0; i < num_etas; i++) {
 		fprintf(f, "%f\n", eta[i]);
@@ -244,6 +253,8 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	matrix box;
 	int est_frames = FRAMESTEP;
 	*nframes = 0;
+
+	print_log("Reading trajectory %s...\n", traj_fname);
 
 	snew(*x, est_frames);
 	*natoms = read_first_x(oenv, &status, traj_fname, &t, &((*x)[0]), box);
@@ -307,7 +318,7 @@ void print_log(char const *fmt, ...) {
 	vprintf(fmt, arg);
 	va_end(arg);
 	if(out_log == NULL) {
-		init_log("svmlog.txt", __FILE__);
+		init_log("etalog.txt", __FILE__);
 	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);
@@ -323,7 +334,7 @@ void print_log(char const *fmt, ...) {
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
 	va_list arg;
 	if(out_log == NULL) {
-		init_log("svmlog.txt", file);
+		init_log("etalog.txt", file);
 	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);

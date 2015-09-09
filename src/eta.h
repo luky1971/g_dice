@@ -34,14 +34,14 @@
  * To help us fund GROMACS development, we humbly ask that you cite
  * the research papers on the package. Check out http://www.gromacs.org.
 
- * svmanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
+ * etanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
  * Copyright (c) 2015, University of South Florida.
  * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
 
-#ifndef _svmanalys_h
-#define _svmanalys_h
+#ifndef _eta_h
+#define _eta_h
 
 #include <math.h>
 #include <stdarg.h>
@@ -69,7 +69,7 @@
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
 
-void svmanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
+void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
 /* Trains the given trajectories in fnames[eTRAJ1] and fnames[eTRAJ2] 
  * using support vector machines and calculates their eta values.
  * See enum above for fnames[]. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.

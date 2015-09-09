@@ -40,11 +40,11 @@
  * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
  */
 
-#include "svmanalys.h"
+#include "eta.h"
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
-		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
+		"etanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
 		"It trains and calculates eta values for atoms from two trajectories.",
 		"-f1 and -f2: Specify the two trajectory files.",
 		"-n1 and -n2: Specify optional index files to select atom groups.",
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
-	svmanalys(fnames, gamma, c, &eta, &natoms, oenv);
+	etanalys(fnames, gamma, c, &eta, &natoms, oenv);
 
 	save_eta(eta, natoms, fnames[eETA_ATOM]);
 	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);

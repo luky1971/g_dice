@@ -1,5 +1,4 @@
-eta_anal
-svmanalys
+etanalys
 *.out
 *.o
 .DS_STORE
