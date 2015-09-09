@@ -1,5 +1,6 @@
 # etanalys
 etanalys analyzes GROMACS trajectory files using support vector machine algorithms and calculates eta values.
+Support vector machine training is provided by libsvm, Copyright (c) 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
 
 The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
 
@@ -7,15 +8,13 @@ To install:
 
 1. Install Gromacs version 4.5.x or later from http://www.gromacs.org.
 
-2. Install libsvm from https://www.csie.ntu.edu.tw/~cjlin/libsvm/. Version 3.20 is officially supported. 
-
 3. `git clone` or otherwise obtain and `cd` to the 'etanalys' repository.
 
 3. Run `sudo make install` with the necessary arguments for your environment (see below).
 
-You will need to specify the installation directory of libsvm in the `SVM` variable if it is not in the same directory as etanalys. If you do not have Gromacs version 5.x installed, you will need to set the makefile's `VGRO` variable to the root Gromacs version number. If Gromacs is installed in a non-default directory (ie not in /usr/local/gromacs) then you will have to set the `GROMACS` variable to the Gromacs installation directory that contains the 'include' and 'lib' folders. For example, if you are running Gromacs 4.5.3 in its default installation and you have libsvm installed in /usr/local/libsvm-3.20, then you would run the following command:
+If you do not have Gromacs version 5.x installed, you will need to set the makefile's `VGRO` variable to the root Gromacs version number. If Gromacs is installed in a non-default directory (ie not in /usr/local/gromacs) then you will have to set the `GROMACS` variable to the Gromacs installation directory that contains the 'include' and 'lib' folders. For example, if you are running Gromacs 4.5.3 installed in /home/user/tools/gromacs-4.5.3, then you would run the following command:
 
-`sudo make install VGRO=4 SVM=/usr/local/libsvm-3.20`
+`sudo make install VGRO=4 GROMACS=/home/user/tools/gromacs-4.5.3`
 
 If you must run `make install` without sudo privileges, you will need to set the `INSTALL` variable to a path that you can write to. The default install path is /usr/local/bin.
 
