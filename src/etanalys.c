@@ -46,9 +46,9 @@ int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"etanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.\n",
 		"It trains and calculates eta values for atoms from two trajectories.\n",
-		"-f1 and -f2: Specify the two trajectory files.\n",
+		"-f1 and -f2: Specify the two trajectory files (xtc, trr, and pdb files are supported).\n",
 		"-n1 and -n2: Specify optional index files to select atom groups.\n",
-		"-eta_atom: Specify the name of the output file.\n",
+		"-eta_atom: Specify the name of the output file (default is eta_atom.dat).\n",
 		"-g and -c: Specify your own gamma and C parameters for svm-train.\n"
 	};
 	const char *fnames[eNUMFILES];
