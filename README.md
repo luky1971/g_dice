@@ -37,7 +37,7 @@ These are all the options you can set:
 The resulting eta values will be found in the output file.
 
 ### Copyright 
-(c) 2015, University of South Florida.  
+(c) 2015, University of South Florida
 Authors: Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma
 
 ### Acknowledgments:
