@@ -1,12 +1,11 @@
 # etanalys
 etanalys analyzes GROMACS trajectory files using support vector machine algorithms and calculates eta values.
-Support vector machine training is provided by libsvm, copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
 
 Etanalys takes as input two trajectory files representing two conformations of the same groups of atoms in two different states. It svm-trains each atom from both trajectories and then calculates each atom's eta from the number of support vectors. The eta values calculated for each atom are a quantification of the difference between the two conformations. Therefore, the given trajectories or atom groups within trajectories should have the same number of atoms. Etanalys can also take input index files to select matching atom groups from the two trajectory files.
 
 The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
 
-To install:
+### To install:
 
 1. Install Gromacs version 4.5.x or later from http://www.gromacs.org.
 
@@ -22,6 +21,8 @@ If you must run `make install` without sudo privileges, you will need to set the
 
 If you are not using gcc, you will also need to set `CC` and `CXX` to your C compiler and C++ compiler commands respectively.
 
+### Usage:
+
 After installing, you can run etanalys with a pair of GROMACS trajectory files with a command such as the following:
 
 `etanalys -f1 <trajectory 1 filename> -f2 <trajectory 2 filename> -eta_atom <output filename>`
@@ -33,3 +34,12 @@ These are all the options you can set:
 -eta_atom: Specify the name of the output file.  
 -g and -c: Specify your own gamma and C parameters for svm-train.  
 
+
+Copyright 2015, University of South Florida.  
+Authors: Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma
+
+### Acknowledgments:
+
+Support vector machine training is provided by libsvm, copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
+
+The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
