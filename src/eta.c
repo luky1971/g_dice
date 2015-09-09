@@ -295,7 +295,6 @@ void svm_prob2file(const struct svm_problem *prob, const char *fname) {
  * Logging functions
  ********************************************************/
 
-/* Opens the logfile and logs initial time/date */
 void init_log(const char *logfile, const char *program) {
 	out_log = fopen(logfile, "a");
 	
@@ -306,12 +305,10 @@ void init_log(const char *logfile, const char *program) {
 		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
 
-/* Closes the logfile */
 void close_log() {
 	fclose(out_log);
 }
 
-/* Prints to both stdout and the logfile */
 void print_log(char const *fmt, ...) {
 	va_list arg;
 	va_start(arg, fmt);
@@ -327,10 +324,6 @@ void print_log(char const *fmt, ...) {
 	}
 }
 
-/* 
- * Logs fatal error to logfile and also calls gmx_fatal
- * Hint: Use FARGS for arguments 2-4.
- */
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
 	va_list arg;
 	if(out_log == NULL) {

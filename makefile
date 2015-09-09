@@ -2,7 +2,7 @@ CC=gcc
 CXX=g++
 GROMACS=/usr/local/gromacs
 VGRO=5
-SVM=../libsvm-3.20
+SVM=extern/libsvm-3.20
 INSTALL=/usr/local/bin
 
 ifeq ($(VGRO),5)
@@ -17,10 +17,10 @@ LIBGRO=-lgmx
 DEFV5=
 endif
 
-.PHONY: install clean 
+.PHONY: install clean
 
 etanalys: etanalys.o eta.o
-	$(CXX) -o etanalys etanalys.o eta.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+	make -C $(SVM) && $(CXX) -o etanalys etanalys.o eta.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
 
 install: etanalys
 	install etanalys $(INSTALL)
@@ -32,4 +32,4 @@ eta.o: src/eta.c src/eta.h
 	$(CC) -c src/eta.c $(INCGRO) -I$(SVM) $(DEFV5)
 
 clean:
-	rm -f etanalys.o eta.o etanalys
+	make clean -C $(SVM) && rm -f etanalys.o eta.o etanalys

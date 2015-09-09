@@ -68,7 +68,6 @@
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
-
 void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
 /* Trains the given trajectories in fnames[eTRAJ1] and fnames[eTRAJ2] 
  * using support vector machines and calculates their eta values.
@@ -103,9 +102,23 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 
 void svm_prob2file(const struct svm_problem *prob, const char *fname);
 
+/********************************************************
+ * Logging functions
+ ********************************************************/
+
+/* Opens the logfile and logs initial time/date */
 void init_log(const char *logfile, const char *program);
+
+/* Closes the logfile */
 void close_log();
+
+/* Prints to both stdout and the logfile */
 void print_log(char const *fmt, ...);
+
+/* 
+ * Logs fatal error to logfile and also calls gmx_fatal
+ * Hint: Use FARGS for arguments 2-4.
+ */
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 
 #endif
