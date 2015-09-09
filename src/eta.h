@@ -62,8 +62,8 @@
 
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
-#define GAMMA 0.01 // default gamma parameter for svm_train
-#define COST 10 // default C parameter for svm_train
+#define GAMMA 0.001 // default gamma parameter for svm_train
+#define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};

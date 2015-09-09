@@ -1,4 +1,4 @@
 etanalys
-*.out
 *.o
+*.out
 .DS_STORE

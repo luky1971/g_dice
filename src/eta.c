@@ -200,7 +200,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
 
-	print_log("svm-training trajectory atoms...\n");
+	print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
 
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
