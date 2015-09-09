@@ -103,4 +103,9 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 
 void svm_prob2file(const struct svm_problem *prob, const char *fname);
 
+void init_log(const char *logfile, const char *program);
+void close_log();
+void print_log(char const *fmt, ...);
+void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
+
 #endif

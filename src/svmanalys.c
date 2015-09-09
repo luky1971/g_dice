@@ -44,62 +44,7 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
-static void init_log(const char *program);
-static void close_log(void);
-static void print_log(char const *fmt, ...);
-static void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
-
 static FILE *out_log = NULL;
-
-int main(int argc, char *argv[]) {
-	const char *desc[] = {
-		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
-		"It trains and calculates eta values for atoms from two trajectories.",
-		"-f1 and -f2: Specify the two trajectory files.",
-		"-n1 and -n2: Specify optional index files to select atom groups.",
-		"-eta_atom: Specify the name of the output file.",
-		"-g and -c: Specify your own gamma and C parameters for svm-train."
-	};
-	const char *fnames[eNUMFILES];
-	output_env_t oenv = NULL;
-	real gamma = GAMMA, c = COST;
-
-	/* eta values */
-	real *eta;
-	int natoms;
-
-	init_log(argv[0]);
-
-	t_filenm fnm[] = {
-		{efTRX, "-f1", "traj1.xtc", ffREAD},
-		{efTRX, "-f2", "traj2.xtc", ffREAD},
-		{efNDX, "-n1", "index1.ndx", ffOPTRD},
-		{efNDX, "-n2", "index2.ndx", ffOPTRD},
-		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
-	};
-
-	t_pargs pa[] = {
-		{"-g", FALSE, etREAL, {&gamma}, "gamma parameter for svm-train"},
-		{"-c", FALSE, etREAL, {&c}, "C (cost) parameter for svm-train"}
-	};
-
-	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, 
-		asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
-
-	fnames[eTRAJ1] = opt2fn("-f1", eNUMFILES, fnm);
-	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
-	fnames[eNDX1] = opt2fn_null("-n1", eNUMFILES, fnm);
-	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
-	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
-
-	svmanalys(fnames, gamma, c, &eta, &natoms, oenv);
-
-	save_eta(eta, natoms, fnames[eETA_ATOM]);
-	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
-
-	sfree(eta);
-	close_log();
-}
 
 void svmanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
@@ -340,8 +285,8 @@ void svm_prob2file(const struct svm_problem *prob, const char *fname) {
  ********************************************************/
 
 /* Opens the logfile and logs initial time/date */
-static void init_log(const char *program) {
-	out_log = fopen("svmlog.txt", "a");
+void init_log(const char *logfile, const char *program) {
+	out_log = fopen(logfile, "a");
 	
 	time_t t = time(NULL);
 	struct tm *ltime = localtime(&t);
@@ -351,18 +296,18 @@ static void init_log(const char *program) {
 }
 
 /* Closes the logfile */
-static void close_log(void) {
+void close_log() {
 	fclose(out_log);
 }
 
 /* Prints to both stdout and the logfile */
-static void print_log(char const *fmt, ...) {
+void print_log(char const *fmt, ...) {
 	va_list arg;
 	va_start(arg, fmt);
 	vprintf(fmt, arg);
 	va_end(arg);
 	if(out_log == NULL) {
-		init_log(__FILE__);
+		init_log("svmlog.txt", __FILE__);
 	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);
@@ -373,12 +318,12 @@ static void print_log(char const *fmt, ...) {
 
 /* 
  * Logs fatal error to logfile and also calls gmx_fatal
- * Hint: Use FARGS for the first 3 arguments.
+ * Hint: Use FARGS for arguments 2-4.
  */
-static void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
+void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
 	va_list arg;
 	if(out_log == NULL) {
-		init_log(file);
+		init_log("svmlog.txt", file);
 	}
 	if(out_log != NULL) {
 		va_start(arg, fmt);
