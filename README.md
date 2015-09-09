@@ -28,8 +28,8 @@ After installing, you can run etanalys with a pair of GROMACS trajectory files w
 
 These are all the options you can set:
 
--f1 and -f2: Specify the two trajectory files.  
--n1 and -n2: Specify optional index files to select atom groups.  
+-f1 and -f2: Specify the two trajectory files (xtc, trr, and pdb files are supported).  
+-n1 and -n2: Specify optional index (.ndx) files to select atom groups.  
 -eta_atom: Specify the name of the output file.  
 -g and -c: Specify your own gamma and C parameters for svm-train.  
 
