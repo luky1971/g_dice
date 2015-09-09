@@ -34,8 +34,10 @@ These are all the options you can set:
 -eta_atom: Specify the name of the output file (default is eta_atom.dat).  
 -g and -c: Specify your own gamma and C parameters for svm-train.  
 
+The resulting eta values will be found in the output file.
 
-Copyright 2015, University of South Florida.  
+### Copyright 
+(c) 2015, University of South Florida.  
 Authors: Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma
 
 ### Acknowledgments:
