@@ -276,21 +276,6 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	close_trx(status);
 }
 
-void svm_prob2file(const struct svm_problem *prob, const char *fname) {
-	int i, j, n = prob->l;
-	FILE *f = fopen(fname, "w");
-	
-	for(i = 0; i < n; i++) {
-		fprintf(f, "%d", (int)(prob->y[i]));
-		for(j = 0; j < 3; j++) {
-			fprintf(f, " %d:%f", prob->x[i][j].index, prob->x[i][j].value);
-		}
-		fprintf(f, "\n");
-	}
-
-	fclose(f);
-}
-
 /********************************************************
  * Logging functions
  ********************************************************/

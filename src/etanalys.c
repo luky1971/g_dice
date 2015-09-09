@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 		"-f1 and -f2: Specify the two trajectory files (xtc, trr, and pdb files are supported).\n",
 		"-n1 and -n2: Specify optional index files to select atom groups.\n",
 		"-eta_atom: Specify the name of the output file (default is eta_atom.dat).\n",
-		"-g and -c: Specify your own gamma and C parameters for svm-train.\n"
+		"-g and -c: Specify your own gamma and C parameters for svm-train (default is gamma = 0.01, c = 10.0).\n"
 	};
 	const char *fnames[eNUMFILES];
 	output_env_t oenv = NULL;

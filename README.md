@@ -2,7 +2,7 @@
 etanalys analyzes GROMACS trajectory files using support vector machine algorithms and calculates eta values.
 
 Etanalys takes as input two trajectory files representing two different conformations of the same groups of atoms. It svm-trains the classification of each atom between the two trajectories and then calculates each atom's eta from the number of support vectors. The eta values calculated for each atom are a quantification of the difference between the two conformations. Therefore, the given trajectories or atom groups within trajectories should have the same number of atoms. Etanalys can also take input index files to select matching atom groups from the two trajectory files.  
-Etanalys uses default svm-train C and gamma parameters (100.0 and 0.001) that we optimized for normalized atomic distributions. If the resulting eta values are not satisfactory, you can set your own C and gamma parameter values for svm-train with -c and -g.
+Etanalys uses default svm-train C and gamma parameters (10.0 and 0.01) that we optimized for normalized atomic distributions. If the resulting eta values are not satisfactory, you can set your own C and gamma parameter values for svm-train with -c and -g.
 
 The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
 
@@ -33,7 +33,7 @@ These are all the options you can set:
 -f1 and -f2: Specify the two trajectory files (xtc, trr, and pdb files are supported).  
 -n1 and -n2: Specify optional index (.ndx) files to select atom groups.  
 -eta_atom: Specify the name of the output file (default is eta_atom.dat).  
--g and -c: Specify your own gamma and C parameters for svm-train (default is gamma = 0.001, c = 100.0).  
+-g and -c: Specify your own gamma and C parameters for svm-train (default is gamma = 0.01, c = 10.0).  
 
 The resulting eta values will be found in the output file, in the same order as the corresponding atoms in the input trajectory files.
 

@@ -62,8 +62,8 @@
 
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
-#define GAMMA 0.001 // default gamma parameter for svm_train
-#define COST 100.0 // default C parameter for svm_train
+#define GAMMA 0.01 // default gamma parameter for svm_train
+#define COST 10.0 // default C parameter for svm_train
 
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
@@ -97,28 +97,32 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
  */
 
 void save_eta(real *eta, int num_etas, const char *eta_fname);
+/* Saves the given eta values in a data file with the given name.
+ */
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t oenv);
-
-void svm_prob2file(const struct svm_problem *prob, const char *fname);
+/* Reads a trajectory file.
+ */
 
 /********************************************************
  * Logging functions
  ********************************************************/
 
-/* Opens the logfile and logs initial time/date */
 void init_log(const char *logfile, const char *program);
-
-/* Closes the logfile */
-void close_log();
-
-/* Prints to both stdout and the logfile */
-void print_log(char const *fmt, ...);
-
-/* 
- * Logs fatal error to logfile and also calls gmx_fatal
- * Hint: Use FARGS for arguments 2-4.
+/* Opens the logfile and logs initial time/date. Remember to close_log() at end of program.
  */
+
+void close_log();
+/* Closes the logfile.
+ */
+
+void print_log(char const *fmt, ...);
+/* Prints to both stdout and the logfile.
+ */
+
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
+/* Logs fatal error to logfile and also calls gmx_fatal
+ * Hint: Use FARGS for first 3 arguments.
+ */
 
 #endif
