@@ -66,14 +66,16 @@
 #define COST 10 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eETA_ANAL, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
 
-void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize);
-/* Trains the given trajectories in fnames[TRAJ1] and fnames[TRAJ2] 
- * using support vector machines and calculates their eta values,
- * which are stored in a file with name indicated by fnames[ETA_DAT].
- * See enum above for fnames[]. fnames[NDX1] and/or fnames[NDX2] can be NULL.
+void svmanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
+/* Trains the given trajectories in fnames[eTRAJ1] and fnames[eTRAJ2] 
+ * using support vector machines and calculates their eta values.
+ * See enum above for fnames[]. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
+ * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
+ * Memory is allocated for the eta array.
+ * output_env_t oenv is needed for reading trajectory files.
  */
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
@@ -85,14 +87,19 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2,
  * x1 and x2 should each be size [nframes][natoms]. indx1 and indx2 should each be size [natoms].
  */
 
-void optimize_params(const char *fnames[], real *gamma, real *c);
-
 void train_traj(struct svm_problem *probs, int num_probs, 
 	real gamma, real c, struct svm_model **models);
+/* Calls libsvm's svm_train function with default parameters and given gamma and c parameters.
+ */
 
-void calc_eta(struct svm_model **models, int num_models, int num_frames, double *eta);
+void calc_eta(struct svm_model **models, int num_models, int num_frames, real *eta);
+/* Calculates eta values from the number of support vectors in the given svm models
+ * and the given number of frames in each trajectory.
+ */
 
-void print_eta(double *eta, int num_etas, const char *eta_fname);
+void save_eta(real *eta, int num_etas, const char *eta_fname);
+
+void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t oenv);
 
 void svm_prob2file(const struct svm_problem *prob, const char *fname);
 

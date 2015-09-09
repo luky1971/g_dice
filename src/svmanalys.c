@@ -44,23 +44,29 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
-static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms);
 static void init_log(const char *program);
 static void close_log(void);
 static void print_log(char const *fmt, ...);
 static void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 
 static FILE *out_log = NULL;
-static output_env_t oenv = NULL;
 
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"svmanalys analyzes trajectory files produced by GROMACS using support vector machine algorithms.",
-		"It calculates eta values for trained atoms from two trajectories."
+		"It trains and calculates eta values for atoms from two trajectories.",
+		"-f1 and -f2: Specify the two trajectory files.",
+		"-n1 and -n2: Specify optional index files to select atom groups.",
+		"-eta_atom: Specify the name of the output file.",
+		"-g and -c: Specify your own gamma and C parameters for svm-train."
 	};
 	const char *fnames[eNUMFILES];
+	output_env_t oenv = NULL;
 	real gamma = GAMMA, c = COST;
-	gmx_bool optimize = FALSE;
+
+	/* eta values */
+	real *eta;
+	int natoms;
 
 	init_log(argv[0]);
 
@@ -69,14 +75,12 @@ int main(int argc, char *argv[]) {
 		{efTRX, "-f2", "traj2.xtc", ffREAD},
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
-		{efDAT, "-eta_anal", "eta_anal.dat", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
 	};
 
 	t_pargs pa[] = {
 		{"-g", FALSE, etREAL, {&gamma}, "gamma parameter for svm-train"},
-		{"-c", FALSE, etREAL, {&c}, "C (cost) parameter for svm-train"},
-		{"-opt", FALSE, etBOOL, {&optimize}, "Search for optimal C and gamma parameters with expected eta values given in -eta_anal"}
+		{"-c", FALSE, etREAL, {&c}, "C (cost) parameter for svm-train"}
 	};
 
 	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, 
@@ -86,35 +90,35 @@ int main(int argc, char *argv[]) {
 	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
 	fnames[eNDX1] = opt2fn_null("-n1", eNUMFILES, fnm);
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
-	fnames[eETA_ANAL] = opt2fn_null("-eta_anal", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
-	svmanalys(fnames, &gamma, &c, optimize);
+	svmanalys(fnames, gamma, c, &eta, &natoms, oenv);
 
+	save_eta(eta, natoms, fnames[eETA_ATOM]);
+	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
+
+	sfree(eta);
 	close_log();
 }
 
-void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
+void svmanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 	const char *ndx_error = "Given index groups have different numbers of atoms!\n";
 
 	/* Trajectory data */
 	rvec **x1, **x2; // Trajectory position vectors
-	int nframes, nframes2, natoms, natoms2, i;
+	int nframes, nframes2, natoms2, i;
 
 	/* Training data */
 	struct svm_problem *probs; // svm problems for training
 	struct svm_model **models; // pointers to models produced by training
-
-	/* eta values */
-	double *eta;
 
 	/* Read trajectory files */
 	switch(fn2ftp(fnames[eTRAJ1])) {
 		case efXTC:
 		case efTRR:
 		case efPDB:
-			read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms);
+			read_traj(fnames[eTRAJ1], &x1, &nframes, natoms, oenv);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
@@ -123,7 +127,7 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 		case efXTC:
 		case efTRR:
 		case efPDB:
-			read_traj(fnames[eTRAJ2], &x2, &nframes2, &natoms2);
+			read_traj(fnames[eTRAJ2], &x2, &nframes2, &natoms2, oenv);
 			break;
 		default:
 			log_fatal(FARGS, io_error);
@@ -131,7 +135,7 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 
 	/* In case traj files have different numbers of frames or atoms */
 	nframes = nframes2 < nframes ? nframes2 : nframes;
-	natoms = natoms2 < natoms ? natoms2 : natoms;
+	*natoms = natoms2 < *natoms ? natoms2 : *natoms;
 
 	/* Index data */
 #define NUMGROUPS 1
@@ -146,11 +150,11 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 	// If an index file was given, get atom group with indices that will be trained
 	if(fnames[eNDX1] != NULL) {
 		rd_index(fnames[eNDX1], NUMGROUPS, isize, indx1, grp_names);
-		natoms = isize[0];
+		*natoms = isize[0];
 	}
 	else { // If no index file, set default indices as 0 to natoms - 1
-		snew(indx1[0], natoms);
-		for(i = 0; i < natoms; i++) {
+		snew(indx1[0], *natoms);
+		for(i = 0; i < *natoms; i++) {
 			indx1[0][i] = i;
 		}
 	}
@@ -158,7 +162,7 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 		snew(isize2, NUMGROUPS);
 		snew(indx2, NUMGROUPS);
 		rd_index(fnames[eNDX2], NUMGROUPS, isize2, indx2, grp_names);
-		if(isize2[0] != natoms) {
+		if(isize2[0] != *natoms) {
 			log_fatal(FARGS, ndx_error);
 		}
 	}
@@ -168,7 +172,7 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 	sfree(grp_names);
 
 	/* Construct svm problems */
-	traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, natoms, &probs);
+	traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, *natoms, &probs);
 
 	/* No longer need original vectors and index data */
 	for(i = 0; i < nframes; i++) {
@@ -187,29 +191,21 @@ void svmanalys(const char *fnames[], real *gamma, real *c, gmx_bool optimize) {
 		sfree(indx2);
 	}
 
-	/* Optimize gamma and C parameters */
-	if(optimize) {
-		optimize_params(fnames, gamma, c);
-	}
-
 	/* Train SVM */
-	snew(models, natoms);
-	train_traj(probs, natoms, *gamma, *c, models);
+	snew(models, *natoms);
+	train_traj(probs, *natoms, gamma, c, models);
 
 	/* Calculate eta values */
-	snew(eta, natoms);
-	calc_eta(models, natoms, nframes, eta);
-
-	print_eta(eta, natoms, fnames[eETA_ATOM]);
+	snew(*eta, *natoms);
+	calc_eta(models, *natoms, nframes, *eta);
 
 	/* Clean up */
 	sfree(probs); // Don't free the data within probs, will cause error
-	for(i = 0; i < natoms; i++) {
+	for(i = 0; i < *natoms; i++) {
 		svm_free_model_content(models[i]);
 		svm_free_and_destroy_model(&(models[i]));
 	}
 	sfree(models);
-	sfree(eta);
 }
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
@@ -238,7 +234,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 			snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
 				(*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
-				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0;
+				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
 			}
 			(*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
 		}
@@ -252,10 +248,6 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 			(*probs)[cur_atom].x[cur_data][i].index = -1;
 		}
 	}
-}
-
-void optimize_params(const char *fnames[], real *gamma, real *c) {
-	//TODO
 }
 
 void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
@@ -283,14 +275,14 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, st
 	}
 }
 
-void calc_eta(struct svm_model **models, int num_models, int num_frames, double *eta) {
+void calc_eta(struct svm_model **models, int num_models, int num_frames, real *eta) {
 	int i;
 	for(i = 0; i < num_models; i++) {
-		eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (double)num_frames);
+		eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (real)num_frames);
 	}
 }
 
-void print_eta(double *eta, int num_etas, const char *eta_fname) {
+void save_eta(real *eta, int num_etas, const char *eta_fname) {
 	int i;
 	FILE *f = fopen(eta_fname, "w");
 
@@ -301,7 +293,7 @@ void print_eta(double *eta, int num_etas, const char *eta_fname) {
 	fclose(f);
 }
 
-static void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms) {
+void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t oenv) {
 	t_trxstatus *status = NULL;
 	real t;
 	matrix box;
