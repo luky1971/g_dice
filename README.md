@@ -50,7 +50,7 @@ The default install path is /usr/local/bin. Depending on your system and chosen 
 
 If you are not using gcc, you will also need to set `CC` and `CXX` to your C compiler and C++ compiler commands respectively.
 
-### USAGE:
+### USAGE
 
 After installing, run g_ensemble_comp -h to get usage instructions. The instructions are also provided in the introductory paragraph above and also in the tutor directory.
 
