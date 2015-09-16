@@ -1,5 +1,5 @@
 /*
- * This file is part of the GROMACS molecular simulation package.
+ * This program uses the GROMACS molecular simulation package API.
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
