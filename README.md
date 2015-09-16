@@ -3,21 +3,21 @@ g_ensemble_comp evaluates the difference between two conformational
 ensembles, R and R'. Quanitification is in terms of a true metric that
 satisfies the conditions set forth by the zeroth law of thermodynamics. The
 quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized,
-that is, 0<=eta<1,  and takes up a value closer to unity as the difference
+that is, 0<=eta<1, and takes up a value closer to unity as the difference
 between the ensembles increases. For two Gaussian distributions with
-identical standard deviations of 0.5 A,  eta=0.68 represents a geometric
+identical standard deviations of 0.5 A, eta=0.68 represents a geometric
 center deviation of 1 A. The two ensembles are provided as two trajectory
 files specified by the -f1 and -f2 options (supported formats=xtc,trr,pdb).
 We recommend that frames numbers in the trajectory files are in the range
 2500-5000. While the speed of the algorithm decreases with increase in
 ensemble size, the numerical accuracy of the calculation reduces with
-decrease in ensemble size,  and small number of frames may not provide a good
+decrease in ensemble size, and small number of frames may not provide a good
 representation of the ensemble. Note that if you are not interested in eta to
-reflect changes in whole molecule translation/rotation,  then these degress
+reflect changes in whole molecule translation/rotation, then these degress
 of freedom need to be removed prior to ensemble comparison. For most cases,
-this can be accomplished by fitting all conformations  in the two ensembles
-on to one single representative structure, such as the x-ray structure For
-this, we recommend the use of trjconv with the -fit rot+trans option.By
+this can be accomplished by fitting all conformations in the two ensembles
+on to one single representative structure, such as the x-ray structure. For
+this, we recommend the use of trjconv with the -fit rot+trans option. By
 default, differences are estimated for all atoms, but comparisons can be done
 for a smaller specific group of atoms,  which can be selected from index
 files -n1 and -n2. Overlaps are estimated by training a support vector
@@ -54,6 +54,5 @@ If you are not using gcc, you will also need to set `CC` and `CXX` to your C com
 After installing, run g_ensemble_comp -h to get usage instructions. The instructions are also provided in the introductory paragraph above and also in the tutor directory.
 
 ### Copyright 
-(c) 2015 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma
+(c) 2015 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma  
 The code uses SVM libraries: LIBSVM copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
-
