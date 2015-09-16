@@ -1,0 +1,181 @@
+Reading trajectory PDZ2_frag_apo.pdb...
+Reading trajectory PDZ2_frag_bound.pdb...
+Constructing svm problems...
+svm-training trajectory atoms with gamma = 0.400000 and C = 100.000000...
+...
+WARNING: using -h 0 may be faster
+*.*
+optimization finished, #iter = 4585
+nu = 0.120285
+obj = -59527.056981, rho = 8.740978
+nSV = 614, nBSV = 592
+Total nSV = 614
+...
+WARNING: using -h 0 may be faster
+*..*
+optimization finished, #iter = 5132
+nu = 0.124237
+obj = -61585.540646, rho = 5.107591
+nSV = 633, nBSV = 610
+Total nSV = 633
+...........*....*
+optimization finished, #iter = 15392
+nu = 0.260713
+obj = -129297.696116, rho = 6.805455
+nSV = 1328, nBSV = 1291
+Total nSV = 1328
+......*..*
+optimization finished, #iter = 8110
+nu = 0.058740
+obj = -28444.300200, rho = 10.231784
+nSV = 308, nBSV = 283
+Total nSV = 308
+........*...*.*
+optimization finished, #iter = 11297
+nu = 0.059306
+obj = -29035.730526, rho = 6.538954
+nSV = 315, nBSV = 283
+Total nSV = 315
+.....*....*
+optimization finished, #iter = 9057
+nu = 0.055330
+obj = -26826.318915, rho = 4.644913
+nSV = 294, nBSV = 262
+Total nSV = 294
+.....
+WARNING: using -h 0 may be faster
+*...........*
+optimization finished, #iter = 16726
+nu = 0.056970
+obj = -27888.266425, rho = 4.203764
+nSV = 307, nBSV = 269
+Total nSV = 307
+........*..*
+optimization finished, #iter = 10497
+nu = 0.057312
+obj = -28037.078646, rho = 3.640547
+nSV = 309, nBSV = 267
+Total nSV = 309
+...........
+WARNING: using -h 0 may be faster
+*.............*
+optimization finished, #iter = 24770
+nu = 0.073629
+obj = -36083.220261, rho = 5.505772
+nSV = 392, nBSV = 353
+Total nSV = 392
+.......
+WARNING: using -h 0 may be faster
+*......*
+optimization finished, #iter = 13911
+nu = 0.081504
+obj = -39886.469433, rho = 8.153030
+nSV = 427, nBSV = 393
+Total nSV = 427
+.....*.
+WARNING: using -h 0 may be faster
+*.*
+optimization finished, #iter = 7543
+nu = 0.121609
+obj = -60220.642731, rho = 5.690631
+nSV = 620, nBSV = 598
+Total nSV = 620
+.....*.........*
+optimization finished, #iter = 14662
+nu = 0.133434
+obj = -66090.125166, rho = 4.360980
+nSV = 683, nBSV = 653
+Total nSV = 683
+......*..*
+optimization finished, #iter = 8280
+nu = 0.122475
+obj = -60612.918142, rho = 4.607868
+nSV = 624, nBSV = 600
+Total nSV = 624
+.....*....*
+optimization finished, #iter = 9040
+nu = 0.131901
+obj = -65202.789093, rho = 4.953498
+nSV = 673, nBSV = 649
+Total nSV = 673
+........*.....*
+optimization finished, #iter = 13276
+nu = 0.199343
+obj = -98170.024276, rho = 3.119020
+nSV = 1009, nBSV = 982
+Total nSV = 1009
+.........*..........*.*
+optimization finished, #iter = 19925
+nu = 0.233691
+obj = -115256.540677, rho = 3.296277
+nSV = 1191, nBSV = 1154
+Total nSV = 1191
+..................*..............*...*
+optimization finished, #iter = 34581
+nu = 0.328770
+obj = -162703.012139, rho = 3.092788
+nSV = 1668, nBSV = 1625
+Total nSV = 1668
+......*.*
+optimization finished, #iter = 7100
+nu = 0.114239
+obj = -56363.382596, rho = 2.866975
+nSV = 585, nBSV = 558
+Total nSV = 585
+..........*............*.*
+optimization finished, #iter = 23324
+nu = 0.143869
+obj = -70887.198909, rho = 1.524414
+nSV = 747, nBSV = 703
+Total nSV = 747
+.......*..*
+optimization finished, #iter = 9148
+nu = 0.111041
+obj = -54752.393270, rho = 5.234675
+nSV = 574, nBSV = 541
+Total nSV = 574
+........*.......*
+optimization finished, #iter = 15105
+nu = 0.114760
+obj = -56440.981003, rho = 3.531457
+nSV = 591, nBSV = 560
+Total nSV = 591
+.........*.......*
+optimization finished, #iter = 16112
+nu = 0.146074
+obj = -71741.329607, rho = 3.762218
+nSV = 756, nBSV = 715
+Total nSV = 756
+................*...............*
+optimization finished, #iter = 31360
+nu = 0.201137
+obj = -99491.224238, rho = 2.654557
+nSV = 1044, nBSV = 977
+Total nSV = 1044
+..........................................*......................................*.....*
+optimization finished, #iter = 85117
+nu = 0.218220
+obj = -107619.412595, rho = 3.164508
+nSV = 1143, nBSV = 1052
+Total nSV = 1143
+..................................................................*...................................................................................*..................*
+optimization finished, #iter = 166766
+nu = 0.229695
+obj = -113459.225053, rho = 1.703701
+nSV = 1235, nBSV = 1087
+Total nSV = 1235
+............................................................................................................................................*....................................................................................................................................................................*.....................*
+optimization finished, #iter = 325628
+nu = 0.250205
+obj = -123729.358019, rho = 1.111310
+nSV = 1392, nBSV = 1144
+Total nSV = 1392
+........*......*
+optimization finished, #iter = 14935
+nu = 0.134141
+obj = -66029.921124, rho = 3.654382
+nSV = 691, nBSV = 652
+Total nSV = 691
+Calculating eta values...
+Saving eta values to eta_atom_example1.dat...
+Eta values saved in file eta_atom_example1.dat

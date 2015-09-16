@@ -1,0 +1,39 @@
+Reading trajectory PDZ2_frag_apo.pdb...
+Reading trajectory PDZ2_frag_bound.pdb...
+Selected 1: 'Res1_bb'
+Selected 1: 'Res1_bb'
+Constructing svm problems...
+svm-training trajectory atoms with gamma = 0.400000 and C = 100.000000...
+...
+WARNING: using -h 0 may be faster
+*.*
+optimization finished, #iter = 4585
+nu = 0.120285
+obj = -59527.056981, rho = 8.740978
+nSV = 614, nBSV = 592
+Total nSV = 614
+...
+WARNING: using -h 0 may be faster
+*..*
+optimization finished, #iter = 5132
+nu = 0.124237
+obj = -61585.540646, rho = 5.107591
+nSV = 633, nBSV = 610
+Total nSV = 633
+.....*.
+WARNING: using -h 0 may be faster
+*.*
+optimization finished, #iter = 7543
+nu = 0.121609
+obj = -60220.642731, rho = 5.690631
+nSV = 620, nBSV = 598
+Total nSV = 620
+.....*.........*
+optimization finished, #iter = 14662
+nu = 0.133434
+obj = -66090.125166, rho = 4.360980
+nSV = 683, nBSV = 653
+Total nSV = 683
+Calculating eta values...
+Saving eta values to eta_atom_example2.dat...
+Eta values saved in file eta_atom_example2.dat

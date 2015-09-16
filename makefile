@@ -1,5 +1,5 @@
 CC=gcc
-CXX=g++
+CXX=g++ 
 GROMACS=/usr/local/gromacs
 VGRO=5
 SVM=extern/libsvm-3.20
@@ -19,17 +19,17 @@ endif
 
 .PHONY: install clean
 
-etanalys: etanalys.o eta.o
-	make -C $(SVM) && $(CXX) -o etanalys etanalys.o eta.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+g_ensemble_comp: g_ensemble_comp.o ensemble_comp.o
+	make -C $(SVM) && $(CXX) -o g_ensemble_comp g_ensemble_comp.o ensemble_comp.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
 
-install: etanalys
-	install etanalys $(INSTALL)
+install: g_ensemble_comp
+	install g_ensemble_comp $(INSTALL)
 
-etanalys.o: src/etanalys.c src/eta.h
-	$(CC) -c src/etanalys.c $(INCGRO) -I$(SVM) $(DEFV5)
+g_ensemble_comp.o: src/g_ensemble_comp.c src/ensemble_comp.h
+	$(CC) -c src/g_ensemble_comp.c $(INCGRO) -I$(SVM) $(DEFV5)
 
-eta.o: src/eta.c src/eta.h
-	$(CC) -c src/eta.c $(INCGRO) -I$(SVM) $(DEFV5)
+ensemble_comp.o: src/ensemble_comp.c src/ensemble_comp.h
+	$(CC) -c src/ensemble_comp.c $(INCGRO) -I$(SVM) $(DEFV5)
 
 clean:
-	make clean -C $(SVM) && rm -f etanalys.o eta.o etanalys
+	make clean -C $(SVM) && rm -f g_ensemble_comp.o ensemble_comp.o g_ensemble_comp

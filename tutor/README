@@ -1,0 +1,16 @@
+SYSTEM: Each of the two trajectories in PDB format contain 2501 frames of a 3 amino acid fragment (aa 36-38) of the PDZ2 domain. The frames were extracted at regular intervals from separate 1 microsecond long MD trajectories. While one trajectory was generated in the presence of the regulator, the other was generated without the regulator. 
+ 
+To get quantitative estimates for the difference  between these two ensembles:
+
+$g_ensemble_comp -eta_atom eta_atom_example1.dat -f1 PDZ2_frag_apo.pdb -f2 PDZ2_frag_bound.pdb > example1.log
+
+The eta_atom.dat contains the eta values of all atoms.
+To get one eta value per residue, one can average over all the atoms in that residue. 
+To visualize eta values on a PDB structure, we recommend replacing the structure factor column in PDB format with eta values, and then using structure factor to highlight variations in any visualization software. 
+
+To get quantitative estimates for the difference between the ensembles of a selected group of atoms:
+
+$g_ensemble_comp -eta_atom eta_atom_example2.dat -f1 PDZ2_frag_apo.pdb -n1 PDZ2_frag_apo.ndx -f2 PDZ2_frag_bound.pdb -n2 PDZ2_frag_bound.ndx > example2.log
+
+
+

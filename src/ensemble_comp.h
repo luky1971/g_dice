@@ -34,14 +34,14 @@
  * To help us fund GROMACS development, we humbly ask that you cite
  * the research papers on the package. Check out http://www.gromacs.org.
 
- * etanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
- * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
- * Copyright (c) 2015, University of South Florida.
- * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
+ * g_ensemble_comp quantifies the difference between two conformational ensembles (two trajectory files) 
+ * Quantification is in terms of a true metric, eta=1-Overlap 
+ * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875. 
+ * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani and Sameer Varma.
  */
 
-#ifndef _eta_h
-#define _eta_h
+#ifndef _ensemble_comp_h
+#define _ensemble_comp_h
 
 #include <math.h>
 #include <stdarg.h>
@@ -62,15 +62,15 @@
 
 #define LABEL1 -1 // classification label for trajectory 1
 #define LABEL2 1 // classification label for trajectory 2
-#define GAMMA 0.01 // default gamma parameter for svm_train
-#define COST 10.0 // default C parameter for svm_train
+#define GAMMA 0.4 // default gamma parameter for svm_train
+#define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
 void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
-/* Trains the given trajectories in fnames[eTRAJ1] and fnames[eTRAJ2] 
- * using support vector machines and calculates their eta values.
+/* Projects the coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] 
+ * in the Hilbert space specified by C and gamma  and calculates discriminability.
  * See enum above for fnames[]. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
  * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
  * Memory is allocated for the eta array.
@@ -83,7 +83,6 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2,
  * Memory is allocated for the probs array, which can be freed after use, but don't free data within probs.
  * One problem is generated per atom, containing its positions in all the frames of x1 and then x2.
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
- * x1 and x2 should each be size [nframes][natoms]. indx1 and indx2 should each be size [natoms].
  */
 
 void train_traj(struct svm_problem *probs, int num_probs, 

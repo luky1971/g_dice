@@ -34,13 +34,13 @@
  * To help us fund GROMACS development, we humbly ask that you cite
  * the research papers on the package. Check out http://www.gromacs.org.
 
- * etanalys analyzes GROMACS trajectory files using support vector machines and calculates eta values.
- * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani, and Dr. Sameer Varma.
- * Copyright (c) 2015, University of South Florida.
- * The authors would like to acknowledge the use of the services provided by Research Computing at the University of South Florida.
+ * g_ensemble_comp quantifies the difference between two conformational ensembles (two trajectory files) 
+ * Quantification is in terms of a true metric, eta=1-Overlap 
+ * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875. 
+ * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani and Sameer Varma.
  */
 
-#include "eta.h"
+#include "ensemble_comp.h"
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
@@ -48,7 +48,9 @@ static FILE *out_log = NULL;
 
 void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
-	const char *ndx_error = "Given index groups have different numbers of atoms!\n";
+	const char *fr_error = "Input trajectories have differing numbers of frames!\n";
+	const char *ndx_error = "Given index groups have differing numbers of atoms!\n";
+	const char *natom_error = "Input trajectories have differing numbers of atoms!\n";
 
 	/* Trajectory data */
 	rvec **x1, **x2; // Trajectory position vectors
@@ -79,8 +81,9 @@ void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms,
 	}
 
 	/* In case traj files have different numbers of frames or atoms */
-	nframes = nframes2 < nframes ? nframes2 : nframes;
-	*natoms = natoms2 < *natoms ? natoms2 : *natoms;
+	if(nframes != nframes2) {
+		log_fatal(FARGS, fr_error);
+	}
 
 	/* Index data */
 #define NUMGROUPS 1
@@ -112,6 +115,9 @@ void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms,
 		}
 	}
 	else {
+		if(natoms2 != *natoms) {
+			log_fatal(FARGS, natom_error);
+		}
 		indx2 = indx1;
 	}
 	sfree(grp_names);
@@ -239,9 +245,9 @@ void save_eta(real *eta, int num_etas, const char *eta_fname) {
 	FILE *f = fopen(eta_fname, "w");
 
 	print_log("Saving eta values to %s...\n", eta_fname);
-
+	fprintf(f, "INDEX\tETA\n");
 	for(i = 0; i < num_etas; i++) {
-		fprintf(f, "%f\n", eta[i]);
+		fprintf(f, "%d\t%f\n", i+1, eta[i]);
 	}
 
 	fclose(f);
