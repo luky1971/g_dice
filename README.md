@@ -1,4 +1,4 @@
-### g_ensemble_comp
+### g_ensemble_comp 1.0.0
 g_ensemble_comp evaluates the difference between two conformational
 ensembles, R and R'. Quanitification is in terms of a true metric that
 satisfies the conditions set forth by the zeroth law of thermodynamics. The
@@ -30,7 +30,7 @@ Leighty and Varma, JCTC, 2013, 9: 868-875.
 Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.
 Dutta, Botlani and Varma, JPC B, 2014, 118: 14795-14807.
 
-### INSTALLATION
+## INSTALLATION
 
 The following instructions are for unix-based operating systems such as OSX and Linux. Windows is not currently supported.
 
@@ -49,11 +49,11 @@ The default install path is /usr/local/bin. Depending on your system and chosen 
 
 If you are not using gcc, you will also need to set `CC` and `CXX` to your C compiler and C++ compiler commands respectively.
 
-### USAGE:
+## USAGE:
 
 After installing, run g_ensemble_comp -h to get usage instructions. The instructions are also provided in the introductory paragraph above and also in the tutor directory.
 
-### Copyright 
+## Copyright 
 (c) 2015 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma
 The code uses SVM libraries: LIBSVM copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
 
