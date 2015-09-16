@@ -1,4 +1,5 @@
-# g_ensemble_comp 1.0.0
+### g_ensemble_comp 1.0.0
+
 g_ensemble_comp evaluates the difference between two conformational
 ensembles, R and R'. Quanitification is in terms of a true metric that
 satisfies the conditions set forth by the zeroth law of thermodynamics. The
