@@ -102,6 +102,7 @@ void save_eta(real *eta, int num_etas, const char *eta_fname);
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
 /* Reads a trajectory file.
+ * 2D memory is allocated for x.
  */
 
 /********************************************************
