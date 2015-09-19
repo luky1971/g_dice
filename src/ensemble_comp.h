@@ -68,13 +68,13 @@
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
-void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv);
+void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t *oenv);
 /* Projects the coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] 
  * in the Hilbert space specified by C and gamma  and calculates discriminability.
  * See enum above for fnames[]. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
  * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
  * Memory is allocated for the eta array.
- * output_env_t oenv is needed for reading trajectory files.
+ * output_env_t *oenv is needed for reading trajectory files.
  * You can initialize an output_env_t using Gromacs' parse_common_args() function.
  */
 
@@ -100,7 +100,7 @@ void save_eta(real *eta, int num_etas, const char *eta_fname);
 /* Saves the given eta values in a data file with the given name.
  */
 
-void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t oenv);
+void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
 /* Reads a trajectory file.
  */
 

@@ -46,7 +46,7 @@
 
 static FILE *out_log = NULL;
 
-void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t oenv) {
+void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t *oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 	const char *fr_error = "Input trajectories have differing numbers of frames!\n";
 	const char *ndx_error = "Given index groups have differing numbers of atoms!\n";
@@ -253,7 +253,7 @@ void save_eta(real *eta, int num_etas, const char *eta_fname) {
 	fclose(f);
 }
 
-void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t oenv) {
+void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv) {
 	t_trxstatus *status = NULL;
 	real t;
 	matrix box;
@@ -263,7 +263,7 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	print_log("Reading trajectory %s...\n", traj_fname);
 
 	snew(*x, est_frames);
-	*natoms = read_first_x(oenv, &status, traj_fname, &t, &((*x)[0]), box);
+	*natoms = read_first_x(*oenv, &status, traj_fname, &t, &((*x)[0]), box);
 
 	do {
 		(*nframes)++;
@@ -272,7 +272,7 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 			srenew(*x, est_frames);
 		}
 		snew((*x)[*nframes], *natoms);
-	} while(read_next_x(oenv, status, &t,
+	} while(read_next_x(*oenv, status, &t,
 #ifndef GRO_V5 
 		*natoms,
 #endif

@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
-	etanalys(fnames, gamma, c, &eta, &natoms, oenv);
+	etanalys(fnames, gamma, c, &eta, &natoms, &oenv);
 
 	save_eta(eta, natoms, fnames[eETA_ATOM]);
 	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
