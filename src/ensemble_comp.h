@@ -75,6 +75,7 @@ void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms,
  * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
  * Memory is allocated for the eta array.
  * output_env_t oenv is needed for reading trajectory files.
+ * You can initialize an output_env_t using Gromacs' parse_common_args() function.
  */
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
