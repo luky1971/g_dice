@@ -111,4 +111,6 @@ int main(int argc, char *argv[]) {
 
 	sfree(eta);
 	close_log();
+
+	return 0;
 }
