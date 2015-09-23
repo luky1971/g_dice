@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 		"Overlaps are estimated by training a support vector machine in a pre-defined Hilbert space specified by",
 		"the width of the RDF Kernel (gamma=0.4) and",
 		"the maximum value that can be taken up by the Lagrange multiplier (C=100.0).", 
-                "The values of C and gamma can be changed, but such changes will increase mean absolute errors for Gaussian distributions.\n",
+                "The values of C and gamma can be changed, but such changes will increase mean absolute error (MAE=3.26%) of the method.\n",
                 "Methodoligical details and example applications can be found in\n",
 		"Leighty and Varma, JCTC, 2013, 9: 868-875.\n",
 		"Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.\n",
@@ -95,8 +95,7 @@ int main(int argc, char *argv[]) {
 		{"-c", FALSE, etREAL, {&c}, "Max value of Lagrange multiplier (default=100)"}
 	};
 
-	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, 
-		asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
+	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
 
 	fnames[eTRAJ1] = opt2fn("-f1", eNUMFILES, fnm);
 	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
