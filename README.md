@@ -25,7 +25,7 @@ files -n1 and -n2. Overlaps are estimated by training a support vector
 machine in a pre-defined Hilbert space specified by the width of the RDF
 Kernel (gamma=0.4) and the maximum value that can be taken up by the
 Lagrange multiplier (C=100.0). The values of C and gamma can be changed, but
-such changes will increase mean absolute errors for Gaussian distributions.
+such changes will increase mean absolute error (MAE=3.26%) of the method.
 Methodoligical details and example applications can be found in
 Leighty and Varma, JCTC, 2013, 9: 868-875.
 Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.
