@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
 		"the width of the RDF Kernel (gamma=0.4) and",
 		"the maximum value that can be taken up by the Lagrange multiplier (C=100.0).", 
                 "The values of C and gamma can be changed, but such changes will increase mean absolute error (MAE=3.26%) of the method.\n",
+                "By default, g_ensemble_comp is parallelized with OpenMP. To disable parallelization, add the option -nopar.",
                 "Methodoligical details and example applications can be found in\n",
 		"Leighty and Varma, JCTC, 2013, 9: 868-875.\n",
 		"Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.\n",

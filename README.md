@@ -1,4 +1,4 @@
-### g_ensemble_comp v1.0.0
+### g_ensemble_comp
 
 g_ensemble_comp evaluates the difference between two conformational
 ensembles, R and R'. Quanitification is in terms of a true metric that
@@ -26,6 +26,7 @@ machine in a pre-defined Hilbert space specified by the width of the RDF
 Kernel (gamma=0.4) and the maximum value that can be taken up by the
 Lagrange multiplier (C=100.0). The values of C and gamma can be changed, but
 such changes will increase mean absolute error (MAE=3.26%) of the method.
+By default, g_ensemble_comp is parallelized with OpenMP. To disable parallelization, add the option -nopar.
 Methodoligical details and example applications can be found in
 Leighty and Varma, JCTC, 2013, 9: 868-875.
 Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.
