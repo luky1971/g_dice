@@ -44,6 +44,9 @@
 #define _ensemble_comp_h
 
 #include <math.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,12 +71,16 @@
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
 
-void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t *oenv);
+void ensemble_comp(const char *fnames[], real gamma, real c, 
+	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
 /* Projects the coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] 
  * in the Hilbert space specified by C and gamma  and calculates discriminability.
- * See enum above for fnames[]. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
+ * See enum above for fnames[]. They correspond to the command-line file options described in the README.
+ * fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
  * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
  * Memory is allocated for the eta array.
+ * natoms will hold the number of atoms discriminated by the function.
+ * The value of parallel controls whether the svm training routine is parallelized. Recommended value is TRUE. 
  * output_env_t *oenv is needed for reading trajectory files.
  * You can initialize an output_env_t using Gromacs' parse_common_args() function.
  */
@@ -86,8 +93,8 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2,
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
  */
 
-void train_traj(struct svm_problem *probs, int num_probs, 
-	real gamma, real c, struct svm_model **models);
+void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, 
+	gmx_bool parallel, struct svm_model **models);
 /* Calls libsvm's svm_train function with default parameters and given gamma and c parameters.
  */
 

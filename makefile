@@ -1,5 +1,6 @@
 CC=gcc
 CXX=g++ 
+OPENMP=-fopenmp
 GROMACS=/usr/local/gromacs
 VGRO=5
 SVM=extern/libsvm-3.20
@@ -20,7 +21,7 @@ endif
 .PHONY: install clean
 
 g_ensemble_comp: g_ensemble_comp.o ensemble_comp.o
-	make -C $(SVM) && $(CXX) -o g_ensemble_comp g_ensemble_comp.o ensemble_comp.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+	make -C $(SVM) && $(CXX) -o g_ensemble_comp g_ensemble_comp.o ensemble_comp.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO) $(OPENMP)
 
 install: g_ensemble_comp
 	install g_ensemble_comp $(INSTALL)
@@ -29,7 +30,7 @@ g_ensemble_comp.o: src/g_ensemble_comp.c src/ensemble_comp.h
 	$(CC) -c src/g_ensemble_comp.c $(INCGRO) -I$(SVM) $(DEFV5)
 
 ensemble_comp.o: src/ensemble_comp.c src/ensemble_comp.h
-	$(CC) -c src/ensemble_comp.c $(INCGRO) -I$(SVM) $(DEFV5)
+	$(CC) -c src/ensemble_comp.c $(INCGRO) -I$(SVM) $(DEFV5) $(OPENMP)
 
 clean:
 	make clean -C $(SVM) && rm -f g_ensemble_comp.o ensemble_comp.o g_ensemble_comp

@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
 	const char *fnames[eNUMFILES];
 	output_env_t oenv = NULL;
 	real gamma = GAMMA, c = COST;
+	gmx_bool nopar = FALSE;
 
 	/* eta values */
 	real *eta;
@@ -92,7 +93,8 @@ int main(int argc, char *argv[]) {
 
 	t_pargs pa[] = {
 		{"-g", FALSE, etREAL, {&gamma}, "RBD Kernel width (default=0.4)"},
-		{"-c", FALSE, etREAL, {&c}, "Max value of Lagrange multiplier (default=100)"}
+		{"-c", FALSE, etREAL, {&c}, "Max value of Lagrange multiplier (default=100)"},
+		{"-nopar", FALSE, etBOOL, {&nopar}, "Set this option to disable parallelization"}
 	};
 
 	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
@@ -103,7 +105,7 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 
-	etanalys(fnames, gamma, c, &eta, &natoms, &oenv);
+	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
 	save_eta(eta, natoms, fnames[eETA_ATOM]);
 	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);

@@ -46,7 +46,8 @@
 
 static FILE *out_log = NULL;
 
-void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms, output_env_t *oenv) {
+void ensemble_comp(const char *fnames[], real gamma, real c, 
+	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv) {
 	const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
 	const char *fr_error = "Input trajectories have differing numbers of frames!\n";
 	const char *ndx_error = "Given index groups have differing numbers of atoms!\n";
@@ -144,7 +145,7 @@ void etanalys(const char *fnames[], real gamma, real c, real **eta, int *natoms,
 
 	/* Train SVM */
 	snew(models, *natoms);
-	train_traj(probs, *natoms, gamma, c, models);
+	train_traj(probs, *natoms, gamma, c, parallel, models);
 
 	/* Calculate eta values */
 	snew(*eta, *natoms);
@@ -203,7 +204,8 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 	}
 }
 
-void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, struct svm_model **models) {
+void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, 
+	gmx_bool parallel, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
 
 	print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
@@ -225,6 +227,7 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, st
 
 	/* Train svm */
 	int i;
+#pragma omp parallel for if(parallel) schedule(dynamic) private(i) shared(num_probs,models,probs,param)
 	for(i = 0; i < num_probs; i++) {
 		models[i] = svm_train(&(probs[i]), &param);
 	}
