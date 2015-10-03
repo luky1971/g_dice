@@ -229,7 +229,9 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c,
 	int i;
 #pragma omp parallel for if(parallel) schedule(dynamic) private(i) shared(num_probs,models,probs,param)
 	for(i = 0; i < num_probs; i++) {
+	#ifdef _OPENMP
 		print_log("%d threads running svm-train.\n", omp_get_num_threads());
+	#endif
 		models[i] = svm_train(&(probs[i]), &param);
 	}
 }
