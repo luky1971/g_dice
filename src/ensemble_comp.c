@@ -294,7 +294,7 @@ int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
 	gmx_mtop_t mtop;
 	matrix box;
 	rvec *x_ptr, *v_ptr, *f_ptr;
-	int version, generation;
+	int version, generation, i;
 
 	read_tpxheader(tpr_fname, &header, TRUE, &version, &generation);
 
@@ -346,7 +346,30 @@ int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
 	print_log("delta_t: %f\n", ir.delta_t);
 
 	print_log("\nTopology:\n");
-	
+	print_log("Name: %s\n", mtop.name[0]);
+	print_log("ffparams:\n");
+		print_log("\tntypes: %d\n", mtop.ffparams.ntypes);
+		print_log("\tatnr: %d\n", mtop.ffparams.atnr);
+		print_log("\treppow: %f\n", mtop.ffparams.reppow);
+		print_log("\tfudgeQQ: %f\n", mtop.ffparams.fudgeQQ);
+	print_log("Molecular types:\n");
+	for(i = 0; i < mtop.nmoltype; i++) {
+		print_log("\tName: %s\n", mtop.moltype[i].name[0]);
+		print_log("\tNumber of atoms: %d\n", mtop.moltype[i].atoms.nr);
+		print_log("\tNumber of charge groups: %d\n", mtop.moltype[i].cgs.nr);
+	}
+	print_log("Molecule blocks:\n");
+	for(i = 0; i < mtop.nmolblock; i++) {
+		print_log("\tType index: %d\n", mtop.molblock[i].type);
+		print_log("\tNumber of molecules: %d\n", mtop.molblock[i].nmol);
+		print_log("\tNumber of atoms in one molecule: %d\n", mtop.molblock[i].natoms_mol);
+	}
+	print_log("Residue numbering parameter: %d\n", mtop.maxres_renum);
+	print_log("Maximum residue number in moltype: %d\n", mtop.maxresnr);
+	print_log("Number of atom types: %d\n", mtop.atomtypes.nr);
+	print_log("Number of molecules: %d\n", mtop.mols.nr);
+	print_log("Number of groups: %d\n", mtop.groups.ngrpname);
+	print_log("Number of symbol buffers: %d\n", mtop.symtab.nr);
 
 	return header.natoms;
 }
