@@ -43,17 +43,6 @@
 
 #include "ensemble_comp.h"
 
-void print_vecs(rvec *x, int natoms, const char *fname) {
-	int i;
-	FILE *f = fopen(fname, "w");
-
-	for(i = 0; i < natoms; i++) {
-		fprintf(f, "%d: %f %f %f\n", i, x[i][0], x[i][1], x[i][2]);
-	}
-
-	fclose(f);
-}
-
 int main(int argc, char *argv[]) {
 	const char *desc[] = {
 		"g_ensemble_comp evaluates the difference between two conformational ensembles, R and R'.",
@@ -125,17 +114,14 @@ int main(int argc, char *argv[]) {
 
 	if(x != NULL) {
 		print_log("x read!\n");
-		print_vecs(x, natoms, "pos.txt");
 		sfree(x);
 	}
 	if(v != NULL) {
 		print_log("v read!\n");
-		print_vecs(v, natoms, "vel.txt");
 		sfree(v);
 	}
 	if(f != NULL) {
 		print_log("f read!\n");
-		print_vecs(f, natoms, "forces.txt");
 		sfree(f);
 	}
 	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);

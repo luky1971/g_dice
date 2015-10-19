@@ -323,7 +323,30 @@ int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
 
 	read_tpx(tpr_fname, &ir, box, &(header.natoms), *x, *v, *f, &mtop);
 
+	// See inputrec.h
 	print_log("\nInput record:\n");
+	print_log("Integration method: %d\n", ir.eI);
+	print_log("nsteps: %d\n", ir.nsteps);
+	print_log("Simulation part: %d\n", ir.simulation_part);
+	print_log("Init step: %d\n", ir.init_step);
+	print_log("nstcalcenergy: %d\n", ir.nstcalcenergy);
+	print_log("ns_type: %d\n", ir.ns_type);
+	print_log("nstlist: %d\n", ir.nstlist);
+	print_log("ndelta: %d\n", ir.ndelta);
+	print_log("nstcomm: %d\n", ir.nstcomm);
+	print_log("comm_mode: %d\n", ir.comm_mode);
+	print_log("nstcheckpoint: %d\n", ir.nstcheckpoint);
+	print_log("nstlog: %d\n", ir.nstlog);
+	print_log("nstxout: %d\n", ir.nstxout);
+	print_log("nstvout: %d\n", ir.nstvout);
+	print_log("nstfout: %d\n", ir.nstfout);
+	print_log("nstenergy: %d\n", ir.nstenergy);
+	print_log("nstxtcout: %d\n", ir.nstxtcout);
+	print_log("init_t: %f\n", ir.init_t);
+	print_log("delta_t: %f\n", ir.delta_t);
+
+	print_log("\nTopology:\n");
+	
 
 	return header.natoms;
 }
