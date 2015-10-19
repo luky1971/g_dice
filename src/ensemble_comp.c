@@ -288,6 +288,46 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	close_trx(status);
 }
 
+int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
+	t_tpxheader header;
+	t_inputrec ir;
+	gmx_mtop_t mtop;
+	matrix box;
+	rvec *x_ptr, *v_ptr, *f_ptr;
+	int version, generation;
+
+	read_tpxheader(tpr_fname, &header, TRUE, &version, &generation);
+
+	print_log("Topology version: %d\n", version);
+	print_log("Topology generation: $d\n", generation);
+
+	print_log("\nTPX Header:\n");
+	print_log("bIR: %d\n", header.bIr);
+	print_log("bBox: %d\n", header.bBox);
+	print_log("bTop: %d\n", header.bTop);
+	print_log("bX: %d\n", header.bX);
+	print_log("bV: %d\n", header.bV);
+	print_log("bF: %d\n", header.bF);
+	print_log("natoms: %d\n", header.natoms);
+	print_log("ngtc: %d\n", header.ngtc);
+	print_log("lambda: %f\n", header.lambda);
+
+	if(header.bX)	snew(*x, header.natoms);
+	else			*x = NULL;
+
+	if(header.bV)	snew(*v, header.natoms);
+	else			*v = NULL;
+
+	if(header.bF)	snew(*f, header.natoms);
+	else			*f = NULL;
+
+	read_tpx(tpr_fname, &ir, box, &(header.natoms), *x, *v, *f, &mtop);
+
+	print_log("\nInput record:\n");
+
+	return header.natoms;
+}
+
 /********************************************************
  * Logging functions
  ********************************************************/

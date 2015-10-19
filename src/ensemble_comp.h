@@ -54,6 +54,7 @@
 #include "macros.h"
 #include "smalloc.h"
 #include "svm.h"
+#include "tpxio.h" // testing
 #ifdef GRO_V5
 #include "fatalerror.h"
 #include "pargs.h"
@@ -69,7 +70,7 @@
 #define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eETA_ATOM, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eTPX1, eETA_ATOM, eNUMFILES};
 
 void ensemble_comp(const char *fnames[], real gamma, real c, 
 	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
@@ -111,6 +112,8 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 /* Reads a trajectory file.
  * 2D memory is allocated for x.
  */
+
+int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f);
 
 /********************************************************
  * Logging functions
