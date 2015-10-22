@@ -70,7 +70,7 @@
 #define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eTPX1, eETA_ATOM, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eETA_ATOM, eNUMFILES};
 
 void ensemble_comp(const char *fnames[], real gamma, real c, 
 	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);

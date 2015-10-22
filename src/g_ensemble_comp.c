@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 		{efTRX, "-f2", "traj2.xtc", ffREAD},
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
-		{efTPX, "-tp", "topol.tpr", ffOPTRD},
+		{efTPX, "-res", "res.pdb", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
 	};
 
@@ -105,31 +105,15 @@ int main(int argc, char *argv[]) {
 	fnames[eTRAJ2] = opt2fn("-f2", eNUMFILES, fnm);
 	fnames[eNDX1] = opt2fn_null("-n1", eNUMFILES, fnm);
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
-	fnames[eTPX1] = opt2fn_null("-tp", eNUMFILES, fnm);
+	fnames[eRES1] = opt2fn_null("-res", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
+	
+	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
-	rvec *x, *v, *f;
+	save_eta(eta, natoms, fnames[eETA_ATOM]);
+	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
 
-	natoms = read_tpr(fnames[eTPX1], &x, &v, &f);
-
-	if(x != NULL) {
-		print_log("x read!\n");
-		sfree(x);
-	}
-	if(v != NULL) {
-		print_log("v read!\n");
-		sfree(v);
-	}
-	if(f != NULL) {
-		print_log("f read!\n");
-		sfree(f);
-	}
-	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
-
-	// save_eta(eta, natoms, fnames[eETA_ATOM]);
-	// print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
-
-	// sfree(eta);
+	sfree(eta);
 	close_log();
 
 	return 0;
