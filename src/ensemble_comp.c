@@ -288,6 +288,40 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	close_trx(status);
 }
 
+void read_pdb(const char *pdb_fname) {
+#define NATOMS 20
+	char title[20];
+	t_atoms atoms;
+	rvec x[NATOMS];
+	int i;
+
+	atoms.nr = NATOMS;
+	snew(atoms.atom, NATOMS);
+	snew(atoms.atomname, NATOMS);
+	snew(atoms.atomtype, NATOMS);
+	snew(atoms.atomtypeB, NATOMS);
+	atoms.nres = NATOMS;
+	snew(atoms.resinfo, NATOMS);
+	snew(atoms.pdbinfo, NATOMS);
+
+	read_pdb_conf(pdb_fname, title, &atoms, x, NULL, NULL, FALSE, NULL);
+
+	for(i = 0; i < atoms.nr; i++) {
+		print_log("Atom %d: Residue index %d\n", i+1, atoms.atom[i].resind);
+	}
+
+	for(i = 0; i < atoms.nres; i++) {
+		print_log("Residue %d: %s\n", atoms.resinfo[i].nr, *(atoms.resinfo[i].name));
+	}
+
+	sfree(atoms.atom);
+	sfree(atoms.atomname);
+	sfree(atoms.atomtype);
+	sfree(atoms.atomtypeB);
+	sfree(atoms.resinfo);
+	sfree(atoms.pdbinfo);
+}
+
 int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
 	t_tpxheader header;
 	t_inputrec ir;

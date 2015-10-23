@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 		{efTRX, "-f2", "traj2.xtc", ffREAD},
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
-		{efTPX, "-res", "res.pdb", ffOPTRD},
+		{efSTX, "-res", "res.pdb", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
 	};
 
@@ -108,12 +108,14 @@ int main(int argc, char *argv[]) {
 	fnames[eRES1] = opt2fn_null("-res", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 	
-	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+	read_pdb(fnames[eRES1]);
 
-	save_eta(eta, natoms, fnames[eETA_ATOM]);
-	print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
+	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
-	sfree(eta);
+	// save_eta(eta, natoms, fnames[eETA_ATOM]);
+	// print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
+
+	// sfree(eta);
 	close_log();
 
 	return 0;

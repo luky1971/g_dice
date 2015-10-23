@@ -113,6 +113,8 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
  * 2D memory is allocated for x.
  */
 
+void read_pdb(const char *pdb_fname);
+
 int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f);
 
 /********************************************************
