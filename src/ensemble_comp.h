@@ -115,7 +115,9 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 
 void read_pdb(const char *pdb_fname);
 
-int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f);
+// void read_stx(const char *stx_file);
+
+void res_tpx(const char *tpr_fname);
 
 /********************************************************
  * Logging functions

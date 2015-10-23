@@ -44,6 +44,8 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
+#define NATOMS 20
+
 static FILE *out_log = NULL;
 
 void ensemble_comp(const char *fnames[], real gamma, real c, 
@@ -289,8 +291,7 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 }
 
 void read_pdb(const char *pdb_fname) {
-#define NATOMS 20
-	char title[20];
+	char title[256];
 	t_atoms atoms;
 	rvec x[NATOMS];
 	int i;
@@ -322,62 +323,83 @@ void read_pdb(const char *pdb_fname) {
 	sfree(atoms.pdbinfo);
 }
 
-int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
-	t_tpxheader header;
+// Kill this one
+// void read_stx(const char *stx_file) {
+// 	char title[256];
+// 	t_topology top;
+// 	rvec *x;
+// 	matrix box; // temp
+
+// 	atoms.nr = NATOMS;
+// 	snew(atoms.atom, NATOMS);
+// 	snew(atoms.atomname, NATOMS);
+// 	snew(atoms.atomtype, NATOMS);
+// 	snew(atoms.atomtypeB, NATOMS);
+// 	atoms.nres = NATOMS;
+// 	snew(atoms.resinfo, NATOMS);
+// 	snew(atoms.pdbinfo, NATOMS);
+
+// 	read_tps_conf(stx_file, title, &top, NULL, &x, NULL, box, FALSE);
+
+// 	// sfree(x);
+// }
+
+void res_tpx(const char *tpr_fname) {
+	// t_tpxheader header;
 	t_inputrec ir;
 	gmx_mtop_t mtop;
 	matrix box;
-	rvec *x_ptr, *v_ptr, *f_ptr;
-	int version, generation, i;
+	// int version, generation;
+	int natoms, i;
 
-	read_tpxheader(tpr_fname, &header, TRUE, &version, &generation);
+	// read_tpxheader(tpr_fname, &header, TRUE, &version, &generation);
 
-	print_log("Topology version: %d\n", version);
-	print_log("Topology generation: $d\n", generation);
+	// print_log("Topology version: %d\n", version);
+	// print_log("Topology generation: $d\n", generation);
 
-	print_log("\nTPX Header:\n");
-	print_log("bIR: %d\n", header.bIr);
-	print_log("bBox: %d\n", header.bBox);
-	print_log("bTop: %d\n", header.bTop);
-	print_log("bX: %d\n", header.bX);
-	print_log("bV: %d\n", header.bV);
-	print_log("bF: %d\n", header.bF);
-	print_log("natoms: %d\n", header.natoms);
-	print_log("ngtc: %d\n", header.ngtc);
-	print_log("lambda: %f\n", header.lambda);
+	// print_log("\nTPX Header:\n");
+	// print_log("bIR: %d\n", header.bIr);
+	// print_log("bBox: %d\n", header.bBox);
+	// print_log("bTop: %d\n", header.bTop);
+	// print_log("bX: %d\n", header.bX);
+	// print_log("bV: %d\n", header.bV);
+	// print_log("bF: %d\n", header.bF);
+	// print_log("natoms: %d\n", header.natoms);
+	// print_log("ngtc: %d\n", header.ngtc);
+	// print_log("lambda: %f\n", header.lambda);
 
-	if(header.bX)	snew(*x, header.natoms);
-	else			*x = NULL;
+	// if(header.bX)	snew(*x, header.natoms);
+	// else			*x = NULL;
 
-	if(header.bV)	snew(*v, header.natoms);
-	else			*v = NULL;
+	// if(header.bV)	snew(*v, header.natoms);
+	// else			*v = NULL;
 
-	if(header.bF)	snew(*f, header.natoms);
-	else			*f = NULL;
+	// if(header.bF)	snew(*f, header.natoms);
+	// else			*f = NULL;
 
-	read_tpx(tpr_fname, &ir, box, &(header.natoms), *x, *v, *f, &mtop);
+	read_tpx(tpr_fname, &ir, box, &natoms, NULL, NULL, NULL, &mtop);
 
 	// See inputrec.h
-	print_log("\nInput record:\n");
-	print_log("Integration method: %d\n", ir.eI);
-	print_log("nsteps: %d\n", ir.nsteps);
-	print_log("Simulation part: %d\n", ir.simulation_part);
-	print_log("Init step: %d\n", ir.init_step);
-	print_log("nstcalcenergy: %d\n", ir.nstcalcenergy);
-	print_log("ns_type: %d\n", ir.ns_type);
-	print_log("nstlist: %d\n", ir.nstlist);
-	print_log("ndelta: %d\n", ir.ndelta);
-	print_log("nstcomm: %d\n", ir.nstcomm);
-	print_log("comm_mode: %d\n", ir.comm_mode);
-	print_log("nstcheckpoint: %d\n", ir.nstcheckpoint);
-	print_log("nstlog: %d\n", ir.nstlog);
-	print_log("nstxout: %d\n", ir.nstxout);
-	print_log("nstvout: %d\n", ir.nstvout);
-	print_log("nstfout: %d\n", ir.nstfout);
-	print_log("nstenergy: %d\n", ir.nstenergy);
-	print_log("nstxtcout: %d\n", ir.nstxtcout);
-	print_log("init_t: %f\n", ir.init_t);
-	print_log("delta_t: %f\n", ir.delta_t);
+	// print_log("\nInput record:\n");
+	// print_log("Integration method: %d\n", ir.eI);
+	// print_log("nsteps: %d\n", ir.nsteps);
+	// print_log("Simulation part: %d\n", ir.simulation_part);
+	// print_log("Init step: %d\n", ir.init_step);
+	// print_log("nstcalcenergy: %d\n", ir.nstcalcenergy);
+	// print_log("ns_type: %d\n", ir.ns_type);
+	// print_log("nstlist: %d\n", ir.nstlist);
+	// print_log("ndelta: %d\n", ir.ndelta);
+	// print_log("nstcomm: %d\n", ir.nstcomm);
+	// print_log("comm_mode: %d\n", ir.comm_mode);
+	// print_log("nstcheckpoint: %d\n", ir.nstcheckpoint);
+	// print_log("nstlog: %d\n", ir.nstlog);
+	// print_log("nstxout: %d\n", ir.nstxout);
+	// print_log("nstvout: %d\n", ir.nstvout);
+	// print_log("nstfout: %d\n", ir.nstfout);
+	// print_log("nstenergy: %d\n", ir.nstenergy);
+	// print_log("nstxtcout: %d\n", ir.nstxtcout);
+	// print_log("init_t: %f\n", ir.init_t);
+	// print_log("delta_t: %f\n", ir.delta_t);
 
 	print_log("\nTopology:\n");
 	print_log("Name: %s\n", mtop.name[0]);
@@ -404,8 +426,6 @@ int read_tpr(const char *tpr_fname, rvec **x, rvec **v, rvec **f) {
 	print_log("Number of molecules: %d\n", mtop.mols.nr);
 	print_log("Number of groups: %d\n", mtop.groups.ngrpname);
 	print_log("Number of symbol buffers: %d\n", mtop.symtab.nr);
-
-	return header.natoms;
 }
 
 /********************************************************

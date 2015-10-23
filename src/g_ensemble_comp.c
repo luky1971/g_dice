@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eRES1] = opt2fn_null("-res", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
-	
-	read_pdb(fnames[eRES1]);
+
+	res_tpx(fnames[eRES1]);
 
 	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
