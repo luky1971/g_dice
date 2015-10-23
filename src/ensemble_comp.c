@@ -44,7 +44,7 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
-#define NATOMS 20
+#define NATOMS 20 // TEMP
 
 static FILE *out_log = NULL;
 
@@ -290,45 +290,72 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 	close_trx(status);
 }
 
-void read_pdb(const char *pdb_fname) {
+void res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res) {
 	char title[256];
 	t_atoms atoms;
-	rvec x[NATOMS];
-	int i;
+	rvec *x;
 
-	atoms.nr = NATOMS;
-	snew(atoms.atom, NATOMS);
-	snew(atoms.atomname, NATOMS);
-	snew(atoms.atomtype, NATOMS);
-	snew(atoms.atomtypeB, NATOMS);
-	atoms.nres = NATOMS;
-	snew(atoms.resinfo, NATOMS);
-	snew(atoms.pdbinfo, NATOMS);
+	atoms.nr = natoms;
+	snew(atoms.atom, natoms);
+	snew(atoms.atomname, natoms);
+	snew(atoms.atomtype, natoms);
+	snew(atoms.atomtypeB, natoms);
+	atoms.nres = natoms;
+	snew(atoms.resinfo, natoms);
+	snew(atoms.pdbinfo, natoms);
+
+	snew(x, natoms);
 
 	read_pdb_conf(pdb_fname, title, &atoms, x, NULL, NULL, FALSE, NULL);
 
-	for(i = 0; i < atoms.nr; i++) {
-		print_log("Atom %d: Residue index %d\n", i+1, atoms.atom[i].resind);
-	}
+	sfree(x);
 
-	for(i = 0; i < atoms.nres; i++) {
-		print_log("Residue %d: %s\n", atoms.resinfo[i].nr, *(atoms.resinfo[i].name));
-	}
-
-	sfree(atoms.atom);
 	sfree(atoms.atomname);
 	sfree(atoms.atomtype);
 	sfree(atoms.atomtypeB);
-	sfree(atoms.resinfo);
 	sfree(atoms.pdbinfo);
+
+	real *sums;
+	int *n, i, j;
+
+	snew(eta_res->res_nums, atoms.nres);
+	snew(eta_res->res_names, atoms.nres);
+	snew(eta_res->avg_etas, atoms.nres);
+
+	snew(sums, atoms.nres);
+	snew(n, atoms.nres);
+
+	// Add up sums
+	for(i = 0; i < natoms; i++) {
+		sums[atoms.atom[i].resind] += eta[i];
+		n[atoms.atom[i].resind]++;
+	}
+
+	// Calculate average etas
+	for(i = 0; i < atoms.nres; i++) {
+		eta_res->avg_etas[i] = sums[i] / n[i];
+	}
+
+	// Store resinfo in eta_res_t struct
+	eta_res->nres = atoms.nres;
+	for(i = 0; i < atoms.nres; i++) {
+		eta_res->res_nums[i] = atoms.resinfo[i].nr;
+		eta_res->res_names[i] = *(atoms.resinfo[i].name);
+	}
+
+	sfree(sums);
+	sfree(n);
+
+	sfree(atoms.atom);
+	sfree(atoms.resinfo);
 }
 
-// Kill this one
+// Prefer not to use this. Try res_tpx for gro.
 // void read_stx(const char *stx_file) {
 // 	char title[256];
 // 	t_topology top;
 // 	rvec *x;
-// 	matrix box; // temp
+// 	matrix box; // TEMP
 
 // 	atoms.nr = NATOMS;
 // 	snew(atoms.atom, NATOMS);
@@ -426,6 +453,19 @@ void res_tpx(const char *tpr_fname) {
 	print_log("Number of molecules: %d\n", mtop.mols.nr);
 	print_log("Number of groups: %d\n", mtop.groups.ngrpname);
 	print_log("Number of symbol buffers: %d\n", mtop.symtab.nr);
+}
+
+void save_res_eta(eta_res_t *eta_res, const char *eta_res_fname) {
+	int i;
+	FILE *f = fopen(eta_res_fname, "w");
+
+	print_log("Saving residue eta values to %s...\n", eta_res_fname);
+	fprintf(f, "RESIDUE\tETA\n");
+	for(i = 0; i < eta_res->nres; i++) {
+		fprintf(f, "%d%s\t%f\n", eta_res->res_nums[i], eta_res->res_names[i], eta_res->avg_etas[i]);
+	}
+
+	fclose(f);
 }
 
 /********************************************************

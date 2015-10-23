@@ -90,7 +90,8 @@ int main(int argc, char *argv[]) {
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
 		{efSTX, "-res", "res.pdb", ffOPTRD},
-		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE}
+		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
+		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
 
 	t_pargs pa[] = {
@@ -107,15 +108,28 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eRES1] = opt2fn_null("-res", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
+	fnames[eETA_RES] = opt2fn("-eta_res", eNUMFILES, fnm);
 
-	res_tpx(fnames[eRES1]);
+	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
-	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+	save_eta(eta, natoms, fnames[eETA_ATOM]);
 
-	// save_eta(eta, natoms, fnames[eETA_ATOM]);
-	// print_log("Eta values saved in file %s\n", fnames[eETA_ATOM]);
+	if(fnames[eRES1] != NULL) {
+		eta_res_t eta_res;
+		int i;
 
-	// sfree(eta);
+		res_pdb(fnames[eRES1], eta, natoms, &eta_res);\
+		
+		save_res_eta(&eta_res, fnames[eETA_RES]);
+
+		sfree(eta_res.res_nums);
+		sfree(eta_res.res_names);
+		sfree(eta_res.avg_etas);
+	}
+
+	sfree(eta);
+
+	print_log("%s completed successfully.\n", argv[0]);
 	close_log();
 
 	return 0;

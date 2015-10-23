@@ -70,7 +70,16 @@
 #define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eETA_ATOM, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eETA_ATOM, eETA_RES, eNUMFILES};
+
+/* Struct for holding residue eta data */
+typedef struct {
+	int nres; // number of residues
+	int *res_nums; // array of residue numbers
+	const char **res_names; // array of names of the residues
+	real *avg_etas; // array of the average eta value of each residue
+} eta_res_t;
+
 
 void ensemble_comp(const char *fnames[], real gamma, real c, 
 	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
@@ -79,7 +88,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
  * See enum above for fnames[]. They correspond to the command-line file options described in the README.
  * fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
  * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
- * Memory is allocated for the eta array.
+ * Memory is allocated for the eta array. sfree() it after you're done.
  * natoms will hold the number of atoms discriminated by the function.
  * The value of parallel controls whether the svm training routine is parallelized. Recommended value is TRUE. 
  * output_env_t *oenv is needed for reading trajectory files.
@@ -89,7 +98,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
 	int nframes, int natoms, struct svm_problem **probs);
 /* Constructs svm problems from the given position vectors.
- * Memory is allocated for the probs array, which can be freed after use, but don't free data within probs.
+ * Memory is allocated for the probs array, which can be freed (with sfree()) after use, but don't free data within probs.
  * One problem is generated per atom, containing its positions in all the frames of x1 and then x2.
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
  */
@@ -110,14 +119,20 @@ void save_eta(real *eta, int num_etas, const char *eta_fname);
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
 /* Reads a trajectory file.
- * 2D memory is allocated for x.
+ * 2D memory is allocated for x. sfree() it when you're done.
  */
 
-void read_pdb(const char *pdb_fname);
-
-// void read_stx(const char *stx_file);
+void res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
+/*
+ * Memory is allocated for the arrays in res_eta. sfree() them when you're done.
+ */
 
 void res_tpx(const char *tpr_fname);
+/*
+ * TEST
+ */
+
+void save_res_eta(eta_res_t *eta_res, const char *eta_res_fname);
 
 /********************************************************
  * Logging functions
