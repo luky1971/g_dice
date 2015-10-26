@@ -54,7 +54,7 @@
 #include "macros.h"
 #include "smalloc.h"
 #include "svm.h"
-#include "tpxio.h" // testing
+#include "tpxio.h"
 #ifdef GRO_V5
 #include "fatalerror.h"
 #include "pargs.h"
@@ -81,28 +81,25 @@ typedef struct {
 } eta_res_t;
 
 
-void ensemble_comp(const char *fnames[], real gamma, real c, 
-	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
+void ensemble_comp(const char *fnames[], real gamma, real c, real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
 /* Projects the coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] 
  * in the Hilbert space specified by C and gamma and calculates discriminability (eta).
  * See enum above for fnames[]. They correspond to the command-line file options described in the README.
  * Only eTRAJ1, eTRAJ2, eNDX1, and eNDX2 are used by this function. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
- * Memory is allocated for the eta array. sfree() it after you're done.
+ * Memory is allocated for the eta array.
  * natoms will hold the number of atoms discriminated by the function.
  * parallel controls whether the svm training is parallelized (only if compiled with openmp). Recommended value is TRUE. 
  * output_env_t *oenv is needed for reading trajectory files. You can initialize one using output_env_init() in Gromacs's oenv.h.
  */
 
-void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
-	int nframes, int natoms, struct svm_problem **probs);
+void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs);
 /* Constructs svm problems from the given position vectors.
- * Memory is allocated for the probs array, which can be freed (with sfree()) after use, but don't free data within probs.
+ * Memory is allocated for the probs array, which can be freed after use, but don't free data within probs.
  * One problem is generated per atom, containing its positions in all the frames of x1 and then x2.
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
  */
 
-void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, 
-	gmx_bool parallel, struct svm_model **models);
+void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, gmx_bool parallel, struct svm_model **models);
 /* Calls libsvm's svm_train function with default parameters and given gamma and c parameters.
  */
 
@@ -114,7 +111,7 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
 void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_res);
 /* Calculates average discriminability (eta) per residue using residue info in given file.
  * Supported file formats include pdb and gro (tpr needs to be tested).
- * Memory is allocated for the arrays in eta_res. sfree() them when you're done.
+ * Memory is allocated for the arrays in eta_res.
  */
 
 void save_eta(real *eta, int num_etas, const char *eta_fname);
@@ -127,7 +124,7 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
 /* Reads a trajectory file.
- * 2D memory is allocated for x. sfree() it when you're done.
+ * 2D memory is allocated for x.
  */
 
 /********************************************************
