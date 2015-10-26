@@ -360,15 +360,20 @@ static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res) {
 	t_topology top;
 	rvec *x = NULL;
 	matrix box;
-	int ePBC, i;
+	int ePBC;
 
 	init_top(&top);
 
 	read_tps_conf(tps_file, title, &top, &ePBC, &x, NULL, box, FALSE);
-	
-	// done_top(&top); // Causes segmentation fault. TODO: See implementation in typedefs.c and free memory manually
 
 	f_calc_eta_res(eta, &(top.atoms), eta_res);
+
+	// Cannot use done_top(), causes error- pointer being freed was not allocated. See implementation in typedefs.c
+	done_atom(&(top.atoms));
+	done_symtab(&(top.symtab));
+	done_block(&(top.cgs));
+	done_block(&(top.mols));
+	done_blocka(&(top.excls));
 
 	sfree(x);
 }
