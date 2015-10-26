@@ -7,26 +7,35 @@ quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized,
 that is, 0<=eta<1, and takes up a value closer to unity as the difference
 between the ensembles increases. For two Gaussian distributions with
 identical standard deviations of 0.5 A, eta=0.68 represents a geometric
-center deviation of 1 A. The two ensembles are provided as two trajectory
-files specified by the -f1 and -f2 options (supported formats=xtc,trr,pdb).
-We recommend that frames numbers in the trajectory files are in the range
+center deviation of 1 A. 
+
+The two ensembles are provided as two trajectory files specified
+by the -f1 and -f2 options (supported formats=xtc,trr,pdb).
+We recommend that frame numbers in the trajectory files are in the range
 2500-5000. While the speed of the algorithm decreases with increase in
 ensemble size, the numerical accuracy of the calculation reduces with
-decrease in ensemble size, and small number of frames may not provide a good
-representation of the ensemble. Note that if you are not interested in eta to
+decrease in ensemble size, and a small number of frames may not provide a good
+representation of the ensemble.  
+Note that if you are not interested in eta to
 reflect changes in whole molecule translation/rotation, then these degress
 of freedom need to be removed prior to ensemble comparison. For most cases,
 this can be accomplished by fitting all conformations in the two ensembles
 on to one single representative structure, such as the x-ray structure. For
-this, we recommend the use of trjconv with the -fit rot+trans option. By
-default, differences are estimated for all atoms, but comparisons can be done
-for a smaller specific group of atoms,  which can be selected from index
-files -n1 and -n2. Overlaps are estimated by training a support vector
+this, we recommend the use of trjconv with the -fit rot+trans option.
+
+By default, differences (eta) are estimated for all atoms, but comparisons can be done
+for a smaller specific group of atoms, which can be selected from index
+files -n1 and -n2. The average eta can also be calculated for each residue specified
+in a structure file given by -res (.pdb and .gro files are officially supported).
+
+Overlaps are estimated by training a support vector
 machine in a pre-defined Hilbert space specified by the width of the RDF
 Kernel (gamma=0.4) and the maximum value that can be taken up by the
 Lagrange multiplier (C=100.0). The values of C and gamma can be changed, but
 such changes will increase mean absolute error (MAE=3.26%) of the method.
-By default, g_ensemble_comp is parallelized with OpenMP. To disable parallelization, add the option -nopar.
+
+By default, g_ensemble_comp is parallelized if it was compiled with OpenMP. To disable parallelization, add the option -nopar.
+
 Methodoligical details and example applications can be found in
 Leighty and Varma, JCTC, 2013, 9: 868-875.
 Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.
