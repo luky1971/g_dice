@@ -51,6 +51,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "atoms.h"
+#include "topology.h"
 #include "macros.h"
 #include "smalloc.h"
 #include "svm.h"
