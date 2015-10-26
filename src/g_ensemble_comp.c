@@ -110,16 +110,16 @@ int main(int argc, char *argv[]) {
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 	fnames[eETA_RES] = opt2fn("-eta_res", eNUMFILES, fnm);
 
+	// res_tpx(fnames[eRES1]);
+
 	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
 	save_eta(eta, natoms, fnames[eETA_ATOM]);
 
 	if(fnames[eRES1] != NULL) {
 		eta_res_t eta_res;
-		int i;
 
-		res_pdb(fnames[eRES1], eta, natoms, &eta_res);\
-		
+		res_pdb(fnames[eRES1], eta, natoms, &eta_res);
 		save_res_eta(&eta_res, fnames[eETA_RES]);
 
 		sfree(eta_res.res_nums);

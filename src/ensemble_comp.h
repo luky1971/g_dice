@@ -124,12 +124,17 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 
 void res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
 /*
- * Memory is allocated for the arrays in res_eta. sfree() them when you're done.
+ * Memory is allocated for the arrays in eta_res. sfree() them when you're done.
+ */
+
+void res_tps(const char *tps_file);
+/*
+ * TEST
  */
 
 void res_tpx(const char *tpr_fname);
 /*
- * TEST
+ * WIP
  */
 
 void save_res_eta(eta_res_t *eta_res, const char *eta_res_fname);
