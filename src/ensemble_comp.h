@@ -84,15 +84,13 @@ typedef struct {
 void ensemble_comp(const char *fnames[], real gamma, real c, 
 	real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
 /* Projects the coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] 
- * in the Hilbert space specified by C and gamma  and calculates discriminability.
+ * in the Hilbert space specified by C and gamma and calculates discriminability (eta).
  * See enum above for fnames[]. They correspond to the command-line file options described in the README.
- * fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
- * fnames[eETA_ATOM] is not used in this function, and can be NULL or unspecified.
+ * Only eTRAJ1, eTRAJ2, eNDX1, and eNDX2 are used by this function. fnames[eNDX1] and/or fnames[eNDX2] can be NULL.
  * Memory is allocated for the eta array. sfree() it after you're done.
  * natoms will hold the number of atoms discriminated by the function.
- * The value of parallel controls whether the svm training routine is parallelized. Recommended value is TRUE. 
- * output_env_t *oenv is needed for reading trajectory files.
- * You can initialize an output_env_t using Gromacs' parse_common_args() function.
+ * parallel controls whether the svm training is parallelized (only if compiled with openmp). Recommended value is TRUE. 
+ * output_env_t *oenv is needed for reading trajectory files. You can initialize one using output_env_init() in Gromacs's oenv.h.
  */
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, 
@@ -109,35 +107,28 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c,
  */
 
 void calc_eta(struct svm_model **models, int num_models, int num_frames, real *eta);
-/* Calculates eta values from the number of support vectors in the given svm models
+/* Calculates discriminability (eta) values from the number of support vectors in the given svm models
  * and the given number of frames in each trajectory.
  */
 
+void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_res);
+/* Calculates average discriminability (eta) per residue using residue info in given file.
+ * Supported file formats include pdb and gro (tpr needs to be tested).
+ * Memory is allocated for the arrays in eta_res. sfree() them when you're done.
+ */
+
 void save_eta(real *eta, int num_etas, const char *eta_fname);
-/* Saves the given eta values in a data file with the given name.
+/* Saves the given discriminability (eta) values in a text file with the given name.
+ */
+
+void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
+/* Saves the given discriminability (eta) residue values in a text file with the given name.
  */
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
 /* Reads a trajectory file.
  * 2D memory is allocated for x. sfree() it when you're done.
  */
-
-void res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
-/*
- * Memory is allocated for the arrays in eta_res. sfree() them when you're done.
- */
-
-void res_tps(const char *tps_file);
-/*
- * TEST
- */
-
-void res_tpx(const char *tpr_fname);
-/*
- * WIP
- */
-
-void save_res_eta(eta_res_t *eta_res, const char *eta_res_fname);
 
 /********************************************************
  * Logging functions
