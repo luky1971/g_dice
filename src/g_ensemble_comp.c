@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
 	output_env_t oenv = NULL;
 	real gamma = GAMMA, c = COST;
 	gmx_bool nopar = FALSE;
+	gmx_bool inter_coords = FALSE;
 
 	/* eta values */
 	real *eta;
@@ -99,7 +100,8 @@ int main(int argc, char *argv[]) {
 	t_pargs pa[] = {
 		{"-g", FALSE, etREAL, {&gamma}, "RBD Kernel width (default=0.4)"},
 		{"-c", FALSE, etREAL, {&c}, "Max value of Lagrange multiplier (default=100)"},
-		{"-nopar", FALSE, etBOOL, {&nopar}, "Set this option to disable parallelization"}
+		{"-nopar", FALSE, etBOOL, {&nopar}, "Set this option to disable parallelization"},
+		{"-inter", FALSE, etBOOL, {&inter_coords}, "Set this option to convert trajectories to internal coordinates (if res file is given)"},
 	};
 
 	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
@@ -112,22 +114,38 @@ int main(int argc, char *argv[]) {
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 	fnames[eETA_RES] = opt2fn("-eta_res", eNUMFILES, fnm);
 
-	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+	// TEST
 
-	save_eta(eta, natoms, fnames[eETA_ATOM]);
+	// if(inter_coords && fnames[eRES1] != NULL) {
+	// 	to_internal_coords(fnames[eRES1]);
+	// }
 
-	if(fnames[eRES1] != NULL) {
-		eta_res_t eta_res;
+	// rvec test[4];
+	// test[0][XX] = 2, test[0][YY] = 3, test[0][ZZ] = 0;
+	// test[1][XX] = 3, test[1][YY] = -1, test[1][ZZ] = 0;
+	// test[2][XX] = 6, test[2][YY] = 0, test[2][ZZ] = 0;
+	// test[3][XX] = 8, test[3][YY] = 2.9, test[3][ZZ] = -0.001;
 
-		calc_eta_res(fnames[eRES1], eta, natoms, &eta_res);
-		save_eta_res(&eta_res, fnames[eETA_RES]);
+	// calc_dihedral(test);
 
-		sfree(eta_res.res_nums);
-		sfree(eta_res.res_names);
-		sfree(eta_res.avg_etas);
-	}
+	// end TEST
 
-	sfree(eta);
+	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+
+	// save_eta(eta, natoms, fnames[eETA_ATOM]);
+
+	// if(fnames[eRES1] != NULL) {
+	// 	eta_res_t eta_res;
+
+	// 	calc_eta_res(fnames[eRES1], eta, natoms, &eta_res);
+	// 	save_eta_res(&eta_res, fnames[eETA_RES]);
+
+	// 	sfree(eta_res.res_nums);
+	// 	sfree(eta_res.res_names);
+	// 	sfree(eta_res.avg_etas);
+	// }
+
+	// sfree(eta);
 
 	print_log("%s completed successfully.\n", argv[0]);
 	close_log();

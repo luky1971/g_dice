@@ -55,6 +55,7 @@
 #include "smalloc.h"
 #include "svm.h"
 #include "tpxio.h"
+#include "vec.h"
 #ifdef GRO_V5
 #include "atoms.h"
 #include "fatalerror.h"
@@ -116,6 +117,11 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
  * Memory is allocated for the arrays in eta_res.
  */
 
+void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
+/* Reads a trajectory file.
+ * 2D memory is allocated for x.
+ */
+
 void save_eta(real *eta, int num_etas, const char *eta_fname);
 /* Saves the given discriminability (eta) values in a text file with the given name.
  */
@@ -124,10 +130,14 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
 /* Saves the given discriminability (eta) residue values in a text file with the given name.
  */
 
-void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
-/* Reads a trajectory file.
- * 2D memory is allocated for x.
+void to_internal_coords(const char *top_fname);
+/* Converts given trajectory of cartesian coordinates to internal coordinates.
+ * IN DEVELOPMENT
  */
+
+real calc_dihedral(rvec x[4]);
+
+void bench_angles();
 
 /********************************************************
  * Logging functions
