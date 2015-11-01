@@ -135,7 +135,7 @@ void to_internal_coords(const char *top_fname);
  * IN DEVELOPMENT
  */
 
-real calc_dihedral(rvec x[4]);
+void calc_angles(rvec x[4]);
 
 void bench_angles();
 

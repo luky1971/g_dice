@@ -463,7 +463,7 @@ void to_internal_coords(const char *top_fname) {
 	free_topology(&top);
 }
 
-real calc_dihedral(rvec x[4]) {
+void calc_angles(rvec x[4]) {
 	rvec b1, b2, b3;
 	rvec n1, n2;
 
@@ -471,10 +471,13 @@ real calc_dihedral(rvec x[4]) {
 	rvec_sub(x[2], x[1], b2);
 	rvec_sub(x[3], x[2], b3);
 
+	real bond_angle_1 = 180 - gmx_angle(b1, b2);
+	real bond_angle_2 = 180 - gmx_angle(b2, b3);
+
 	cprod(b1, b2, n1);
 	cprod(b2, b3, n2);
 
-	return gmx_angle(n1, n2);
+	real dihedral = gmx_angle(n1, n2);
 }
 
 /********************************************************

@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 	// test[2][XX] = 6, test[2][YY] = 0, test[2][ZZ] = 0;
 	// test[3][XX] = 8, test[3][YY] = 2.9, test[3][ZZ] = -0.001;
 
-	// calc_dihedral(test);
+	// calc_angles(test);
 
 	// end TEST
 
