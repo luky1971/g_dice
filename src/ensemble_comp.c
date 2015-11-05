@@ -56,10 +56,8 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res);
 static void gro_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
 static void tpr_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
 static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int natoms, const char *int_coords_fname);
-
 static real calc_angle(rvec a, rvec b, rvec c);
 static real calc_dihedral(rvec a, rvec b, rvec c, rvec d);
-static void calc_angles(rvec x[4]);
 
 static void free_atoms(t_atoms *atoms);
 static void free_topology(t_topology *top);
@@ -475,7 +473,7 @@ void to_internal_coords(const char *fnames[], output_env_t *oenv, const char *in
 	read_traj(fnames[eTRAJ1], &x, &nframes, &natoms, oenv);
 
 	switch(fn2ftp(fnames[eTOP1])) {
-		case efGRO:
+		case efGRO: // TODO: allow for -top file option to be gro file. Currently only allows tpx files
 			gro_to_internal_coords(fnames[eTOP1], x, nframes, natoms, int_coords_fname);
 			break;
 		case efTPR:
@@ -541,19 +539,29 @@ static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int
 	int nr_angle = ilist[F_ANGLES].nr;
 	t_iatom *iatoms_angle = ilist[F_ANGLES].iatoms;
 
+	int nr_dih = ilist[F_PDIHS].nr;
+	t_iatom *iatoms_dihedral = ilist[F_PDIHS].iatoms;
+
 	t_iatom a, b, c, d;
 
-	for(i = 0; i < nframes; i++) {
-		fprintf(f, "FRAME %d:\n", i);
+	// for(i = 0; i < nr_dih; i++) {
+	// 	print_log("\tiatom %d: %d\n", i, iatoms_dihedral[i]);
+	// }
 
-		fprintf(f, "ANGLES\n");
+	for(i = 0; i < nframes; i++) {
+		fprintf(f, "\nFrame %d ANGLES:\n", i);
 		fprintf(f, "Atom #s:\tAngle(rad)\n");
 		for(j = 0; j < nr_angle; j+=4) {
 			a = iatoms_angle[j+1], b = iatoms_angle[j+2], c = iatoms_angle[j+3];
-			fprintf(f, "%d %d %d: %f\n", a, b, c, calc_angle(x[i][a], x[i][b], x[i][c]));
+			fprintf(f, "A %d %d %d: %f\n", a, b, c, calc_angle(x[i][a], x[i][b], x[i][c]));
 		}
 
-		fprintf(f, "\n");
+		fprintf(f, "\nFrame %d DIHEDRALS (using proper dihedrals PDIHS)\n", i);
+		fprintf(f, "Atom #s:\tDihedral(rad)\n");
+		for(j = 0; j < nr_dih; j+=5) {
+			a = iatoms_dihedral[j+1], b = iatoms_dihedral[j+2], c = iatoms_dihedral[j+3], d = iatoms_dihedral[j+4];
+			fprintf(f, "D %d %d %d %d: %f\n", a, b, c, d, calc_dihedral(x[i][a], x[i][b], x[i][c], x[i][d]));
+		}
 	}
 
 	fclose(f);
@@ -569,24 +577,17 @@ static real calc_angle(rvec a, rvec b, rvec c) {
 }
 
 static real calc_dihedral(rvec a, rvec b, rvec c, rvec d) {
-	//
-}
-
-static void calc_angles(rvec x[4]) {
 	rvec b1, b2, b3;
 	rvec n1, n2;
 
-	rvec_sub(x[1], x[0], b1);
-	rvec_sub(x[2], x[1], b2);
-	rvec_sub(x[3], x[2], b3);
-
-	real bond_angle_1 = 6.28 - gmx_angle(b1, b2);
-	real bond_angle_2 = 6.28 - gmx_angle(b2, b3);
+	rvec_sub(b, a, b1);
+	rvec_sub(c, b, b2);
+	rvec_sub(d, c, b3);
 
 	cprod(b1, b2, n1);
 	cprod(b2, b3, n2);
 
-	real dihedral = gmx_angle(n1, n2);
+	return gmx_angle(n1, n2);
 }
 
 /********************************************************

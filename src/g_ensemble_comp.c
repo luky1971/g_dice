@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
 		{efSTX, "-res", "res.pdb", ffOPTRD},
-		{efTPX, "-top", "top.tpr", ffOPTRD},
+		{efSTX, "-top", "top.tpr", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
 		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
