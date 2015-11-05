@@ -79,7 +79,6 @@ int main(int argc, char *argv[]) {
 	output_env_t oenv = NULL;
 	real gamma = GAMMA, c = COST;
 	gmx_bool nopar = FALSE;
-	gmx_bool inter_coords = FALSE;
 
 	/* eta values */
 	real *eta;
@@ -93,6 +92,7 @@ int main(int argc, char *argv[]) {
 		{efNDX, "-n1", "index1.ndx", ffOPTRD},
 		{efNDX, "-n2", "index2.ndx", ffOPTRD},
 		{efSTX, "-res", "res.pdb", ffOPTRD},
+		{efTPX, "-top", "top.tpr", ffOPTRD},
 		{efDAT, "-eta_atom", "eta_atom.dat", ffWRITE},
 		{efDAT, "-eta_res", "eta_res.dat", ffWRITE}
 	};
@@ -100,8 +100,7 @@ int main(int argc, char *argv[]) {
 	t_pargs pa[] = {
 		{"-g", FALSE, etREAL, {&gamma}, "RBD Kernel width (default=0.4)"},
 		{"-c", FALSE, etREAL, {&c}, "Max value of Lagrange multiplier (default=100)"},
-		{"-nopar", FALSE, etBOOL, {&nopar}, "Set this option to disable parallelization"},
-		{"-inter", FALSE, etBOOL, {&inter_coords}, "Set this option to convert trajectories to internal coordinates (if res file is given)"},
+		{"-nopar", FALSE, etBOOL, {&nopar}, "Set this option to disable parallelization"}
 	};
 
 	parse_common_args(&argc, argv, 0, eNUMFILES, fnm, asize(pa), pa, asize(desc), desc, 0, NULL, &oenv);
@@ -111,14 +110,17 @@ int main(int argc, char *argv[]) {
 	fnames[eNDX1] = opt2fn_null("-n1", eNUMFILES, fnm);
 	fnames[eNDX2] = opt2fn_null("-n2", eNUMFILES, fnm);
 	fnames[eRES1] = opt2fn_null("-res", eNUMFILES, fnm);
+	fnames[eTOP1] = opt2fn_null("-top", eNUMFILES, fnm);
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 	fnames[eETA_RES] = opt2fn("-eta_res", eNUMFILES, fnm);
 
+	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+
 	// TEST
 
-	// if(inter_coords && fnames[eRES1] != NULL) {
-	// 	to_internal_coords(fnames[eRES1]);
-	// }
+	if(fnames[eTOP1] != NULL) {
+		to_internal_coords(fnames, &oenv, "inter_coords.txt");
+	}
 
 	// rvec test[4];
 	// test[0][XX] = 2, test[0][YY] = 3, test[0][ZZ] = 0;
@@ -129,8 +131,6 @@ int main(int argc, char *argv[]) {
 	// calc_angles(test);
 
 	// end TEST
-
-	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
 	// save_eta(eta, natoms, fnames[eETA_ATOM]);
 

@@ -44,11 +44,24 @@
 
 #define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
 
-static void read_top_tps(const char *tps_file, t_topology *top);
+static void read_res_pdb(const char *pdb_fname, int natoms, t_atoms *atoms);
+static void read_top_gro(const char *gro_fname, t_topology *top);
+static void read_top_tpr(const char *tpr_fname, gmx_mtop_t *mtop);
+
 static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
-static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res);
-static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res);
+static void eta_res_gro(const char *tps_file, real *eta, eta_res_t *eta_res);
+static void eta_res_tpr(const char *tpr_fname, real *eta, eta_res_t *eta_res);
 static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res);
+
+static void gro_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
+static void tpr_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
+static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int natoms, const char *int_coords_fname);
+
+static real calc_angle(rvec a, rvec b, rvec c);
+static real calc_dihedral(rvec a, rvec b, rvec c, rvec d);
+static void calc_angles(rvec x[4]);
+
+static void free_atoms(t_atoms *atoms);
 static void free_topology(t_topology *top);
 
 static FILE *out_log = NULL;
@@ -260,10 +273,10 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
 			eta_res_pdb(res_fname, eta, natoms, eta_res);
 			break;
 		case efGRO: // try using this for tpr as well, or vice versa?
-			eta_res_tps(res_fname, eta, eta_res);
+			eta_res_gro(res_fname, eta, eta_res);
 			break;
 		case efTPR:
-			eta_res_tpx(res_fname, eta, eta_res);
+			eta_res_tpr(res_fname, eta, eta_res);
 			break;
 		default:
 			print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n", res_fname);
@@ -299,13 +312,35 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
 #endif
 		(*x)[*nframes], box));
 
-	sfree((*x)[*nframes]);
+	sfree((*x)[*nframes]); // Nothing was read to the last allocated frame
 	close_trx(status);
 }
 
-// Reads gro files
-// Allocates memory for data within t_topology *top. Use free_topology() to free.
-static void read_top_tps(const char *tps_file, t_topology *top) {
+// Reads residue and atom information from a pdb file
+// Allocates memory for data within t_atoms *atoms. Use free_atoms(t_atoms *atoms) to free.
+static void read_res_pdb(const char *pdb_fname, int natoms, t_atoms *atoms) {
+	char title[256];
+	rvec *x;
+
+	atoms->nr = natoms;
+	snew(atoms->atom, natoms);
+	snew(atoms->atomname, natoms);
+	snew(atoms->atomtype, natoms);
+	snew(atoms->atomtypeB, natoms);
+	atoms->nres = natoms;
+	snew(atoms->resinfo, natoms);
+	snew(atoms->pdbinfo, natoms);
+
+	snew(x, natoms);
+
+	read_pdb_conf(pdb_fname, title, atoms, x, NULL, NULL, FALSE, NULL);
+
+	sfree(x);
+}
+
+// Reads topology information from a gro file
+// Allocates memory for data within t_topology *top. Use free_topology(t_topology *top) to free.
+static void read_top_gro(const char *gro_fname, t_topology *top) {
 	char title[256];
 	rvec *x = NULL;
 	matrix box;
@@ -313,9 +348,20 @@ static void read_top_tps(const char *tps_file, t_topology *top) {
 
 	init_top(top);
 
-	read_tps_conf(tps_file, title, top, &ePBC, &x, NULL, box, FALSE);
+	read_tps_conf(gro_fname, title, top, &ePBC, &x, NULL, box, FALSE);
 
 	sfree(x);
+}
+
+// Reads topology information from a tpr file
+// Allocates memory for data within gmx_mtop_t *mtop.
+// Use done_mtop(gmx_mtop_t *mtop,gmx_bool bDoneSymtab) to free memory.
+static void read_top_tpr(const char *tpr_fname, gmx_mtop_t *mtop) {
+	t_inputrec ir;
+	matrix box;
+	int natoms;
+
+	read_tpx(tpr_fname, &ir, box, &natoms, NULL, NULL, NULL, mtop);
 }
 
 void save_eta(real *eta, int num_etas, const char *eta_fname) {
@@ -349,42 +395,21 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname) {
  ********************************************************/
 
 static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res) {
-	char title[256];
 	t_atoms atoms;
-	rvec *x;
 
-	atoms.nr = natoms;
-	snew(atoms.atom, natoms);
-	snew(atoms.atomname, natoms);
-	snew(atoms.atomtype, natoms);
-	snew(atoms.atomtypeB, natoms);
-	atoms.nres = natoms;
-	snew(atoms.resinfo, natoms);
-	snew(atoms.pdbinfo, natoms);
-
-	snew(x, natoms);
-
-	read_pdb_conf(pdb_fname, title, &atoms, x, NULL, NULL, FALSE, NULL);
-
-	sfree(x);
-
-	sfree(atoms.atomname);
-	sfree(atoms.atomtype);
-	sfree(atoms.atomtypeB);
-	sfree(atoms.pdbinfo);
+	read_res_pdb(pdb_fname, natoms, &atoms);
 
 	f_calc_eta_res(eta, &atoms, eta_res);
 
-	sfree(atoms.atom);
-	sfree(atoms.resinfo);
+	free_atoms(&atoms);
 }
 
 // Used for gro files
 // Try res_tpx for gro and tpr instead of this.
-static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res) {
+static void eta_res_gro(const char *tps_file, real *eta, eta_res_t *eta_res) {
 	t_topology top;
 
-	read_top_tps(tps_file, &top);
+	read_top_gro(tps_file, &top);
 
 	f_calc_eta_res(eta, &(top.atoms), eta_res);
 
@@ -393,15 +418,14 @@ static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res) {
 
 // Used for tpr files
 // TODO: Does this work for gro files generated by grompp etc?
-static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
-	t_inputrec ir;
+static void eta_res_tpr(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
 	gmx_mtop_t mtop;
-	matrix box;
-	int natoms, i;
 
-	read_tpx(tpr_fname, &ir, box, &natoms, NULL, NULL, NULL, &mtop);
+	read_top_tpr(tpr_fname, &mtop);
 
 	f_calc_eta_res(eta, &(mtop.moltype->atoms), eta_res);
+
+	done_mtop(&mtop, TRUE);
 }
 
 static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
@@ -443,27 +467,112 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
  * Internal coordinate functions
  ********************************************************/
 
-// Can currently do gro files. tpr not tested
-void to_internal_coords(const char *top_fname) {
-	t_topology top;
+// TODO: test gro
+void to_internal_coords(const char *fnames[], output_env_t *oenv, const char *int_coords_fname) {
+	rvec **x;
+	int nframes, natoms;
+
+	read_traj(fnames[eTRAJ1], &x, &nframes, &natoms, oenv);
+
+	switch(fn2ftp(fnames[eTOP1])) {
+		case efGRO:
+			gro_to_internal_coords(fnames[eTOP1], x, nframes, natoms, int_coords_fname);
+			break;
+		case efTPR:
+			tpr_to_internal_coords(fnames[eTOP1], x, nframes, natoms, int_coords_fname);
+			break;
+		default:
+			print_log("%s is not a supported filetype for topology information. Skipping interal coordinate calculation.\n", fnames[eTOP1]);
+	}
+
 	int i;
+	for(i = 0; i < nframes; i++) {
+		sfree(x[i]);
+	}
+	sfree(x);
+}
 
-	read_top_tps(top_fname, &top);
+static void gro_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname) {
+	t_topology top;
 
-	print_log("Interaction information: \n");
-	print_log("Number of interaction types: %d\n", top.idef.ntypes);
-	if(top.idef.ntypes > 0) { // ntypes is -1 when no interactions present
-		print_log("atnr: %d\n", top.idef.atnr);
-		print_log("Number of bonds: %d\n", top.idef.il[F_BONDS].nr);
-		for(i = 0; i < top.idef.il[F_BONDS].nr; i++) {
-			print_log("\tiatom %d: %d\n", i, top.idef.il[F_BONDS].iatoms[i]);
-		}
+	read_top_gro(gro_fname, &top);
+
+	// print_log("Interaction information:\n");
+	// print_log("Number of interaction types: %d\n", top.idef.ntypes);
+	// if(top.idef.ntypes > 0) { // ntypes is -1 when no interactions present
+	// 	print_log("atnr: %d\n", top.idef.atnr);
+	// 	print_log("Number of bonds: %d\n", top.idef.il[F_BONDS].nr);
+	// 	for(i = 0; i < top.idef.il[F_BONDS].nr; i++) {
+	// 		print_log("\tiatom %d: %d\n", i, top.idef.il[F_BONDS].iatoms[i]);
+	// 	}
+	// }
+
+	if(top.idef.ntypes > 0) {
+		ilist_to_internal_coords(top.idef.il, x, nframes, natoms ,int_coords_fname);
+	}
+	else {
+		print_log("No interaction information found in %s. Skipping internal coordinate calculation.\n", gro_fname);
 	}
 
 	free_topology(&top);
 }
 
-void calc_angles(rvec x[4]) {
+static void tpr_to_internal_coords(const char *tpr_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname) {
+	gmx_mtop_t mtop;
+
+	read_top_tpr(tpr_fname, &mtop);
+
+	// print_log("Interaction information:\n");
+	// print_log("Number of angle atoms: %d\n", mtop.moltype->ilist[F_ANGLES].nr);
+	// for(i = 0; i < mtop.moltype->ilist[F_ANGLES].nr; i++) {
+	// 	print_log("\tiatom %d: %d\n", i, mtop.moltype->ilist[F_ANGLES].iatoms[i]);
+	// }
+
+	ilist_to_internal_coords(mtop.moltype->ilist, x, nframes, natoms, int_coords_fname);
+
+	done_mtop(&mtop, TRUE);
+}
+
+static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int natoms, const char *int_coords_fname) {
+	int i, j;
+
+	FILE *f = fopen(int_coords_fname, "w");
+
+	int nr_angle = ilist[F_ANGLES].nr;
+	t_iatom *iatoms_angle = ilist[F_ANGLES].iatoms;
+
+	t_iatom a, b, c, d;
+
+	for(i = 0; i < nframes; i++) {
+		fprintf(f, "FRAME %d:\n", i);
+
+		fprintf(f, "ANGLES\n");
+		fprintf(f, "Atom #s:\tAngle(rad)\n");
+		for(j = 0; j < nr_angle; j+=4) {
+			a = iatoms_angle[j+1], b = iatoms_angle[j+2], c = iatoms_angle[j+3];
+			fprintf(f, "%d %d %d: %f\n", a, b, c, calc_angle(x[i][a], x[i][b], x[i][c]));
+		}
+
+		fprintf(f, "\n");
+	}
+
+	fclose(f);
+}
+
+static real calc_angle(rvec a, rvec b, rvec c) {
+	rvec ba, bc;
+
+	rvec_sub(a, b, ba);
+	rvec_sub(c, b, bc);
+
+	return gmx_angle(ba, bc);
+}
+
+static real calc_dihedral(rvec a, rvec b, rvec c, rvec d) {
+	//
+}
+
+static void calc_angles(rvec x[4]) {
 	rvec b1, b2, b3;
 	rvec n1, n2;
 
@@ -471,8 +580,8 @@ void calc_angles(rvec x[4]) {
 	rvec_sub(x[2], x[1], b2);
 	rvec_sub(x[3], x[2], b3);
 
-	real bond_angle_1 = 180 - gmx_angle(b1, b2);
-	real bond_angle_2 = 180 - gmx_angle(b2, b3);
+	real bond_angle_1 = 6.28 - gmx_angle(b1, b2);
+	real bond_angle_2 = 6.28 - gmx_angle(b2, b3);
 
 	cprod(b1, b2, n1);
 	cprod(b2, b3, n2);
@@ -532,6 +641,17 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
 /********************************************************
  * Utility functions
  ********************************************************/
+
+// Frees the dynamic memory in a t_atoms struct
+static void free_atoms(t_atoms *atoms) {
+	sfree(atoms->atomname);
+	sfree(atoms->atomtype);
+	sfree(atoms->atomtypeB);
+	sfree(atoms->pdbinfo);
+
+	sfree(atoms->atom);
+	sfree(atoms->resinfo);
+}
 
 // Frees the dynamic memory in a t_topology struct
 static void free_topology(t_topology *top) {

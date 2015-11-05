@@ -73,7 +73,7 @@
 #define COST 100.0 // default C parameter for svm_train
 
 /* Indices of filenames */
-enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eETA_ATOM, eETA_RES, eNUMFILES};
+enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eTOP1, eETA_ATOM, eETA_RES, eNUMFILES};
 
 /* Struct for holding residue eta data */
 typedef struct {
@@ -118,7 +118,7 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
  */
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
-/* Reads a trajectory file.
+/* Reads a trajectory file. rvec **x is position coordinates indexed x[frame #][atom #]
  * 2D memory is allocated for x.
  */
 
@@ -130,14 +130,10 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
 /* Saves the given discriminability (eta) residue values in a text file with the given name.
  */
 
-void to_internal_coords(const char *top_fname);
+void to_internal_coords(const char *fnames[], output_env_t *oenv, const char *int_coords_fname);
 /* Converts given trajectory of cartesian coordinates to internal coordinates.
  * IN DEVELOPMENT
  */
-
-void calc_angles(rvec x[4]);
-
-void bench_angles();
 
 /********************************************************
  * Logging functions
