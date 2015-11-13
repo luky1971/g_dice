@@ -53,8 +53,7 @@ static void eta_res_gro(const char *tps_file, real *eta, eta_res_t *eta_res);
 static void eta_res_tpr(const char *tpr_fname, real *eta, eta_res_t *eta_res);
 static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res);
 
-static void gro_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
-static void tpr_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname);
+static void ilist2svm_probs(t_ilist ilist[], rvec **x1, rvec **x2, int nframes, struct svm_problem **probs);
 static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int natoms, const char *int_coords_fname);
 static real calc_angle(rvec a, rvec b, rvec c);
 static real calc_dihedral(rvec a, rvec b, rvec c, rvec d);
@@ -170,7 +169,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
 	calc_eta(models, *natoms, nframes, *eta);
 
 	/* Clean up */
-	sfree(probs); // Don't free the data within probs, will cause error
+	sfree(probs); // Don't free the data within probs, will cause error. FIX THIS (create a free function)
 	for(i = 0; i < *natoms; i++) {
 		svm_free_model_content(models[i]);
 		svm_free_and_destroy_model(&(models[i]));
@@ -183,7 +182,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 	int i;
 	double *targets; // trajectory classification labels
 
-	print_log("Constructing svm problems...\n");
+	print_log("Constructing svm problems for cartesian coordinates...\n");
 
 	/* Build targets array with classification labels */
 	snew(targets, nvecs);
@@ -205,7 +204,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
 			snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
 			for(i = 0; i < 3; i++) {
-				(*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
+				(*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 1:x, 2:y, 3:z
 				(*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
 			}
 			(*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
@@ -226,7 +225,7 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c,
 	gmx_bool parallel, struct svm_model **models) {
 	struct svm_parameter param; // Parameters used for training
 
-	print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
+	print_log("svm-training trajectory with gamma = %f and C = %f...\n", gamma, c);
 
 	/* Set svm parameters */
 	param.svm_type = C_SVC;
@@ -279,6 +278,113 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
 		default:
 			print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n", res_fname);
 	}
+}
+
+gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool parallel, output_env_t *oenv, eta_dihedral_t *eta_dih) {
+	rvec **x1, **x2;
+	int nframes, natoms, ndih;
+
+	struct svm_problem *probs;
+	struct svm_model **models;
+
+	gmx_bool success = TRUE;
+
+	switch(fn2ftp(fnames[eTOP1])) {
+		case efGRO:
+			{
+				t_topology top;
+
+				read_top_gro(gro_fname, &top);
+
+				if(top.idef.ntypes > 0) {
+					ndih = top.idef.il[F_PDIHS].nr;
+
+					read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms, oenv);
+					read_traj(fnames[eTRAJ2], &x2, &nframes, &natoms, oenv);
+
+					ilist2svm_probs(top.idef.il, x1, x2, nframes, &probs);
+
+					snew(models, ndih);
+					train_traj(probs, ndih, gamma, c, parallel, models);
+
+					// Construct eta_dih struct
+					eta_dih->ndih = ndih;
+
+					snew(eta_dih->atoms, ndih * 4);
+					int i;
+					for(i = 0; i < ndih; i++) {
+						eta_dih->atoms[i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
+						eta_dih->atoms[i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
+						eta_dih->atoms[i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
+						eta_dih->atoms[i+3] = top.idef.il[F_PDIHS].iatoms[i*5+4];
+					}
+				}
+				else {
+					print_log("No interaction information found in %s. Skipping dihedral eta.\n", fnames[eTOP1]);
+					success = FALSE;
+				}
+
+				free_topology(&top);
+			}
+			break;
+		case efTPR:
+			{
+				gmx_mtop_t mtop;
+
+				read_top_tpr(tpr_fname, &mtop);
+
+				ndih = mtop.moltype->ilist[F_PDIHS].nr;
+
+				read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms, oenv);
+				read_traj(fnames[eTRAJ2], &x2, &nframes, &natoms, oenv);
+
+				ilist2svm_probs(mtop.moltype->ilist, x1, x2, nframes, &probs);
+
+				snew(models, ndih);
+				train_traj(probs, ndih, gamma, c, parallel, models);
+
+				// Construct eta_dih struct
+				eta_dih->ndih = ndih;
+
+				snew(eta_dih->atoms, ndih * 4);
+				int i;
+				for(i = 0; i < ndih; i++) {
+					eta_dih->atoms[i] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+1];
+					eta_dih->atoms[i+1] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+2];
+					eta_dih->atoms[i+2] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+3];
+					eta_dih->atoms[i+3] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+4];
+				}
+
+				done_mtop(&mtop, TRUE);
+			}
+			break;
+		default:
+			print_log("%s is not a supported filetype for topology information. Skipping dihedral eta.\n", fnames[eTOP1]);
+	}
+
+	if(success) {
+		// Calculate eta
+		snew(eta_dih->eta, ndih);
+		calc_eta(models, ndih, nframes, eta_dih->eta);
+
+		// Free memory
+		int i;
+		for(i = 0; i < nframes; i++) {
+			sfree(x1[i]);
+			sfree(x2[i]);
+		}
+		sfree(x1);
+		sfree(x2);
+
+		sfree(probs);
+		for(i = 0; i < ndih; i++) {
+			svm_free_model_content(models[i]);
+			svm_free_and_destroy_model(&(models[i]));
+		}
+		sfree(models);
+	}
+
+	return success;
 }
 
 /********************************************************
@@ -462,73 +568,58 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
 }
 
 /********************************************************
- * Internal coordinate functions
+ * Eta dihedral functions
  ********************************************************/
 
-// TODO: test gro
-void to_internal_coords(const char *fnames[], output_env_t *oenv, const char *int_coords_fname) {
-	rvec **x;
-	int nframes, natoms;
-
-	read_traj(fnames[eTRAJ1], &x, &nframes, &natoms, oenv);
-
-	switch(fn2ftp(fnames[eTOP1])) {
-		case efGRO: // TODO: allow for -top file option to be gro file. Currently only allows tpx files
-			gro_to_internal_coords(fnames[eTOP1], x, nframes, natoms, int_coords_fname);
-			break;
-		case efTPR:
-			tpr_to_internal_coords(fnames[eTOP1], x, nframes, natoms, int_coords_fname);
-			break;
-		default:
-			print_log("%s is not a supported filetype for topology information. Skipping interal coordinate calculation.\n", fnames[eTOP1]);
-	}
-
+static void ilist2svm_probs(t_ilist ilist[], rvec **x1, rvec **x2, int nframes, struct svm_problem **probs) {
+	int ndata = nframes * 2;
 	int i;
+	double *targets;
+
+	int nr_dih = ilist[F_PDIHS].nr;
+	t_iatom *iatoms = ilist[F_PDIHS].iatoms, a, b, c, d;
+
+	print_log("Constructing svm problems for trajectory coordinates...\n");
+
+	/* Build targets array with classification labels */
+	snew(targets, ndata);
 	for(i = 0; i < nframes; i++) {
-		sfree(x[i]);
+		targets[i] = LABEL1; // trajectory 1
 	}
-	sfree(x);
-}
-
-static void gro_to_internal_coords(const char *gro_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname) {
-	t_topology top;
-
-	read_top_gro(gro_fname, &top);
-
-	// print_log("Interaction information:\n");
-	// print_log("Number of interaction types: %d\n", top.idef.ntypes);
-	// if(top.idef.ntypes > 0) { // ntypes is -1 when no interactions present
-	// 	print_log("atnr: %d\n", top.idef.atnr);
-	// 	print_log("Number of bonds: %d\n", top.idef.il[F_BONDS].nr);
-	// 	for(i = 0; i < top.idef.il[F_BONDS].nr; i++) {
-	// 		print_log("\tiatom %d: %d\n", i, top.idef.il[F_BONDS].iatoms[i]);
-	// 	}
-	// }
-
-	if(top.idef.ntypes > 0) {
-		ilist_to_internal_coords(top.idef.il, x, nframes, natoms ,int_coords_fname);
-	}
-	else {
-		print_log("No interaction information found in %s. Skipping internal coordinate calculation.\n", gro_fname);
+	for(; i < ndata; i++) {
+		targets[i] = LABEL2;
 	}
 
-	free_topology(&top);
-}
+	/* Calculate dihedrals and construct svm problems */
+	snew(*probs, nr_dih);
+	int cur_dih, cur_frame, cur_dih;
+	for(cur_dih = 0; cur_dih < nr_dih; cur_dih++) {
+		(*probs)[cur_dih].l = ndata;
+		(*probs)[cur_dih].y = targets;
+		snew((*probs)[cur_dih].x, ndata);
+		// Calculate and insert dihedrals from traj1
+		for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
+			snew((*probs)[cur_dih].x[cur_frame], 2); // (2 = 1 dihedral angle + 1 for -1 end index)
+			(*probs)[cur_dih].x[cur_frame][0].index = 1;
 
-static void tpr_to_internal_coords(const char *tpr_fname, rvec **x, int nframes, int natoms, const char *int_coords_fname) {
-	gmx_mtop_t mtop;
+			// Calculate dihedral angle for this dihedral group and insert into the problem node
+			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], iatoms[cur_dih * 5 + 3], iatoms[cur_dih * 5 + 4];
+			(*probs)[cur_dih].x[cur_frame][0].value = calc_dihedral(x1[cur_frame][a], x1[cur_frame][b], x1[cur_frame][c], x1[cur_frame][d]);
 
-	read_top_tpr(tpr_fname, &mtop);
+			(*probs)[cur_dih].x[cur_frame][1].index = -1; // -1 index marks end of a data vector
+		}
+		// Calculate and insert dihedrals from traj2
+		for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
+			snew((*probs)[cur_dih].x[cur_data], 2);
+			(*probs)[cur_dih].x[cur_data][0].index = 1;
 
-	// print_log("Interaction information:\n");
-	// print_log("Number of angle atoms: %d\n", mtop.moltype->ilist[F_ANGLES].nr);
-	// for(i = 0; i < mtop.moltype->ilist[F_ANGLES].nr; i++) {
-	// 	print_log("\tiatom %d: %d\n", i, mtop.moltype->ilist[F_ANGLES].iatoms[i]);
-	// }
+			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], iatoms[cur_dih * 5 + 3], iatoms[cur_dih * 5 + 4];
 
-	ilist_to_internal_coords(mtop.moltype->ilist, x, nframes, natoms, int_coords_fname);
+			(*probs)[cur_dih].x[cur_data][0].value = calc_dihedral(x2[cur_frame][a], x2[cur_frame][b], x2[cur_frame][c], x2[cur_frame][d]);
 
-	done_mtop(&mtop, TRUE);
+			(*probs)[cur_dih].x[cur_data][1].index = -1;
+		}
+	}
 }
 
 static void ilist_to_internal_coords(t_ilist ilist[], rvec **x, int nframes, int natoms, const char *int_coords_fname) {
@@ -640,8 +731,19 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
 }
 
 /********************************************************
- * Utility functions
+ * Cleanup functions
  ********************************************************/
+
+void free_eta_res(eta_res_t *eta_res) {
+	sfree(eta_res->res_nums);
+	sfree(eta_res->res_names);
+	sfree(eta_res->avg_etas);
+}
+
+void free_eta_dih(eta_dihedral_t *eta_dih) {
+	sfree(eta_dih->atoms);
+	sfree(eta_dih->eta);
+}
 
 // Frees the dynamic memory in a t_atoms struct
 static void free_atoms(t_atoms *atoms) {

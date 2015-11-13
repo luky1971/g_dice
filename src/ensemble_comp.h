@@ -75,6 +75,7 @@
 /* Indices of filenames */
 enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eTOP1, eETA_ATOM, eETA_RES, eNUMFILES};
 
+
 /* Struct for holding residue eta data */
 typedef struct {
 	int nres; // number of residues
@@ -82,6 +83,20 @@ typedef struct {
 	const char **res_names; // array of names of the residues
 	real *avg_etas; // array of the average eta value of each residue
 } eta_res_t;
+
+
+/* Struct for holding dihedral eta data
+ * ndih is the number of dihedrals.
+ * t_iatom atoms is an array of atom indices in each dihedral. It is length ndih * 4.
+ * Layout of atoms array: {dih1 atom1, dih1 atom2, dih1 atom3, dih1 atom4, dih2 atom1, dih2 atom2, dih2 atom3, ...}
+ * eta is an array of eta values length ndih corresponding to the atoms array.
+ * eta[0] corresponds to atoms[0] to atoms[3], eta[1] corresponds to atoms[4] to atoms[7], etc.
+ */
+typedef struct {
+	int ndih;
+	t_iatom *atoms;
+	real *eta;
+} eta_dihedral_t;
 
 
 void ensemble_comp(const char *fnames[], real gamma, real c, real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv);
@@ -97,7 +112,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c, real **eta, int *na
 
 void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs);
 /* Constructs svm problems from the given position vectors.
- * Memory is allocated for the probs array, which can be freed after use, but don't free data within probs.
+ * Memory is allocated for the probs array, which can be freed after use, but don't free data within probs (TO BE FIXED).
  * One problem is generated per atom, containing its positions in all the frames of x1 and then x2.
  * indx1 and indx2 indicate the indices of the atoms in x1 and x2, respectively, that should be included in probs.
  */
@@ -114,7 +129,15 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
 void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_res);
 /* Calculates average discriminability (eta) per residue using residue info in given file.
  * Supported file formats include pdb and gro (tpr needs to be tested).
- * Memory is allocated for the arrays in eta_res.
+ * Memory is allocated for the arrays in eta_res. Use free_eta_res() to free memory.
+ */
+
+gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool parallel, output_env_t *oenv, eta_dihedral_t *eta_dih);
+/* Calculates discriminability (eta) from dihedral angles.
+ * Converts cartesian coordinates in fnames[eTRAJ1] and fnames[eTRAJ2] to dihedrals using information in fnames[eTOP1].
+ * NOTE: Only tpr files are currently supported for fnames[eTOP1], and it MUST contain dihedral interactions.
+ * Returns TRUE if routine was successful.
+ * If TRUE was returned, memory was allocated for the arrays in eta_dih. Use free_eta_dih() to free memory.
  */
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
@@ -128,11 +151,6 @@ void save_eta(real *eta, int num_etas, const char *eta_fname);
 
 void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
 /* Saves the given discriminability (eta) residue values in a text file with the given name.
- */
-
-void to_internal_coords(const char *fnames[], output_env_t *oenv, const char *int_coords_fname);
-/* Converts given trajectory of cartesian coordinates to internal coordinates.
- * IN DEVELOPMENT
  */
 
 /********************************************************
@@ -154,6 +172,18 @@ void print_log(char const *fmt, ...);
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 /* Logs fatal error to logfile and also calls gmx_fatal
  * Hint: Use FARGS for first 3 arguments.
+ */
+
+/********************************************************
+ * Cleanup functions
+ ********************************************************/
+
+void free_eta_res(eta_res_t *eta_res);
+/* Frees the dynaimc memory in an eta_res_t struct
+ */
+
+void free_eta_dih(eta_dihedral_t *eta_dih);
+/* Frees the dynamic memory in an eta_dihedral_t struct
  */
 
 #endif

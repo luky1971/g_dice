@@ -114,13 +114,13 @@ int main(int argc, char *argv[]) {
 	fnames[eETA_ATOM] = opt2fn("-eta_atom", eNUMFILES, fnm);
 	fnames[eETA_RES] = opt2fn("-eta_res", eNUMFILES, fnm);
 
-	// ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
+	ensemble_comp(fnames, gamma, c, &eta, &natoms, !nopar, &oenv);
 
 	// TEST
 
-	if(fnames[eTOP1] != NULL) {
-		to_internal_coords(fnames, &oenv, "inter_coords.txt");
-	}
+	// if(fnames[eTOP1] != NULL) {
+	// 	to_internal_coords(fnames, &oenv, "inter_coords.txt");
+	// }
 
 	// rvec test[4];
 	// test[0][XX] = 2, test[0][YY] = 3, test[0][ZZ] = 0;
@@ -132,20 +132,28 @@ int main(int argc, char *argv[]) {
 
 	// end TEST
 
-	// save_eta(eta, natoms, fnames[eETA_ATOM]);
+	save_eta(eta, natoms, fnames[eETA_ATOM]);
 
-	// if(fnames[eRES1] != NULL) {
-	// 	eta_res_t eta_res;
+	if(fnames[eRES1] != NULL) {
+		eta_res_t eta_res;
 
-	// 	calc_eta_res(fnames[eRES1], eta, natoms, &eta_res);
-	// 	save_eta_res(&eta_res, fnames[eETA_RES]);
+		calc_eta_res(fnames[eRES1], eta, natoms, &eta_res);
+		save_eta_res(&eta_res, fnames[eETA_RES]);
 
-	// 	sfree(eta_res.res_nums);
-	// 	sfree(eta_res.res_names);
-	// 	sfree(eta_res.avg_etas);
-	// }
+		free_eta_res(&eta_res);
+	}
 
-	// sfree(eta);
+	if(fnames[eTOP1] != NULL) {
+		eta_dihedral_t eta_dih;
+
+		if(calc_eta_dihedrals(fnames, &oenv, &eta_dih)) {
+			// TODO: print eta dihedrals
+
+			free_eta_dih(&eta_dih);
+		}
+	}
+
+	sfree(eta);
 
 	print_log("%s completed successfully.\n", argv[0]);
 	close_log();
