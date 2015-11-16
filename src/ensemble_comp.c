@@ -534,7 +534,7 @@ static void eta_res_tpr(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
 
 static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
 	real *sums;
-	int *n, i, j;
+	int *n, i;
 
 	print_log("Calculating residue eta values...\n");
 
@@ -603,7 +603,7 @@ static void ilist2svm_probs(t_ilist ilist[], rvec **x1, rvec **x2, int nframes, 
 			(*probs)[cur_dih].x[cur_frame][0].index = 1;
 
 			// Calculate dihedral angle for this dihedral group and insert into the problem node
-			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], iatoms[cur_dih * 5 + 3], iatoms[cur_dih * 5 + 4];
+			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], c = iatoms[cur_dih * 5 + 3], d = iatoms[cur_dih * 5 + 4];
 			(*probs)[cur_dih].x[cur_frame][0].value = calc_dihedral(x1[cur_frame][a], x1[cur_frame][b], x1[cur_frame][c], x1[cur_frame][d]);
 
 			(*probs)[cur_dih].x[cur_frame][1].index = -1; // -1 index marks end of a data vector
@@ -613,7 +613,7 @@ static void ilist2svm_probs(t_ilist ilist[], rvec **x1, rvec **x2, int nframes, 
 			snew((*probs)[cur_dih].x[cur_data], 2);
 			(*probs)[cur_dih].x[cur_data][0].index = 1;
 
-			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], iatoms[cur_dih * 5 + 3], iatoms[cur_dih * 5 + 4];
+			a = iatoms[cur_dih * 5 + 1], b = iatoms[cur_dih * 5 + 2], c = iatoms[cur_dih * 5 + 3], d = iatoms[cur_dih * 5 + 4];
 
 			(*probs)[cur_dih].x[cur_data][0].value = calc_dihedral(x2[cur_frame][a], x2[cur_frame][b], x2[cur_frame][c], x2[cur_frame][d]);
 
