@@ -294,7 +294,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 			{
 				t_topology top;
 
-				read_top_gro(gro_fname, &top);
+				read_top_gro(fnames[eTOP1], &top);
 
 				if(top.idef.ntypes > 0) {
 					ndih = top.idef.il[F_PDIHS].nr;
@@ -331,7 +331,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 			{
 				gmx_mtop_t mtop;
 
-				read_top_tpr(tpr_fname, &mtop);
+				read_top_tpr(fnames[eTOP1], &mtop);
 
 				ndih = mtop.moltype->ilist[F_PDIHS].nr;
 
@@ -592,7 +592,7 @@ static void ilist2svm_probs(t_ilist ilist[], rvec **x1, rvec **x2, int nframes, 
 
 	/* Calculate dihedrals and construct svm problems */
 	snew(*probs, nr_dih);
-	int cur_dih, cur_frame, cur_dih;
+	int cur_dih, cur_frame, cur_data;
 	for(cur_dih = 0; cur_dih < nr_dih; cur_dih++) {
 		(*probs)[cur_dih].l = ndata;
 		(*probs)[cur_dih].y = targets;

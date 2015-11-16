@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 	if(fnames[eTOP1] != NULL) {
 		eta_dihedral_t eta_dih;
 
-		if(calc_eta_dihedrals(fnames, &oenv, &eta_dih)) {
+		if(calc_eta_dihedrals(fnames, gamma, c, !nopar, &oenv, &eta_dih)) {
 			// TODO: print eta dihedrals
 
 			free_eta_dih(&eta_dih);
