@@ -26,7 +26,7 @@ endif
 .PHONY: install clean
 
 $(BUILD)/g_ensemble_comp: $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o
-	make -C $(SVM) && $(CXX) $(CFLAGS) -o $(BUILD)/g_ensemble_comp $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO)
+	make -C $(SVM) && $(CXX) $(CFLAGS) -o $(BUILD)/g_ensemble_comp $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o $(SVM)/svm.o $(LINKGRO) $(LIBGRO) -ldl
 
 install: $(BUILD)/g_ensemble_comp
 	install $(BUILD)/g_ensemble_comp $(INSTALL)
