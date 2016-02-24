@@ -40,8 +40,8 @@
  * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani and Sameer Varma.
  */
 
-#ifndef _ensemble_comp_h
-#define _ensemble_comp_h
+#ifndef ENSEMBLE_COMP_H
+#define ENSEMBLE_COMP_H
 
 #include <math.h>
 #ifdef _OPENMP
@@ -158,4 +158,4 @@ void free_eta_res(eta_res_t *eta_res);
 /* Frees the dynaimc memory in an eta_res_t struct
  */
 
-#endif
+#endif // ENSEMBLE_COMP_H

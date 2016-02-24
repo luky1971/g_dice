@@ -273,7 +273,7 @@ void save_eta(real *eta, int num_etas, const char *eta_fname) {
     FILE *f = fopen(eta_fname, "w");
 
     print_log("Saving eta values to %s...\n", eta_fname);
-    fprintf(f, "INDEX\tETA\n");
+    fprintf(f, "# INDEX\tETA\n");
     for(i = 0; i < num_etas; ++i) {
         fprintf(f, "%d\t%f\n", i+1, eta[i]);
     }
@@ -286,7 +286,7 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname) {
     FILE *f = fopen(eta_res_fname, "w");
 
     print_log("Saving residue eta values to %s...\n", eta_res_fname);
-    fprintf(f, "RESIDUE\tETA\n");
+    fprintf(f, "# RES\tETA\n");
     for(i = 0; i < eta_res->nres; ++i) {
         fprintf(f, "%d%s\t%f\n", eta_res->res_nums[i], eta_res->res_names[i], eta_res->avg_etas[i]);
     }
