@@ -191,7 +191,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
         // Insert positions from traj1
         for(cur_frame = 0; cur_frame < nframes; ++cur_frame) {
             snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
-            for(i = 0; i < 3; i++) {
+            for(i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
                 (*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
             }
@@ -200,7 +200,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
         // Insert positions from traj2
         for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; ++cur_frame, ++cur_data) {
             snew((*probs)[cur_atom].x[cur_data], 4);
-            for(i = 0; i < 3; i++) {
+            for(i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_data][i].index = i + 1;
                 (*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i] * 10.0;
             }
@@ -274,7 +274,7 @@ void save_eta(real *eta, int num_etas, const char *eta_fname) {
 
     print_log("Saving eta values to %s...\n", eta_fname);
     fprintf(f, "INDEX\tETA\n");
-    for(i = 0; i < num_etas; i++) {
+    for(i = 0; i < num_etas; ++i) {
         fprintf(f, "%d\t%f\n", i+1, eta[i]);
     }
 
@@ -287,7 +287,7 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname) {
 
     print_log("Saving residue eta values to %s...\n", eta_res_fname);
     fprintf(f, "RESIDUE\tETA\n");
-    for(i = 0; i < eta_res->nres; i++) {
+    for(i = 0; i < eta_res->nres; ++i) {
         fprintf(f, "%d%s\t%f\n", eta_res->res_nums[i], eta_res->res_names[i], eta_res->avg_etas[i]);
     }
 
@@ -307,7 +307,7 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
     *natoms = read_first_x(*oenv, &status, traj_fname, &t, &((*x)[0]), box);
 
     do {
-        (*nframes)++;
+        ++(*nframes);
         if(*nframes >= est_frames) {
             est_frames += FRAMESTEP;
             srenew(*x, est_frames);
@@ -406,7 +406,7 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
     // Add up sums
     for(i = 0; i < atoms->nr; ++i) {
         sums[atoms->atom[i].resind] += eta[i];
-        n[atoms->atom[i].resind]++;
+        ++(n[atoms->atom[i].resind]);
     }
 
     // Calculate average etas
