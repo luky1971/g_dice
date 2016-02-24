@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 	real *eta;
 	int natoms;
 
-	init_log("etalog.txt", argv[0]);
+	init_log("eta.log", argv[0]);
 
 	t_filenm fnm[] = {
 		{efTRX, "-f1", "traj1.xtc", ffREAD},

@@ -257,7 +257,7 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
 		case efPDB:
 			eta_res_pdb(res_fname, eta, natoms, eta_res);
 			break;
-		case efGRO: // try using this for tpr as well, or vice versa?
+		case efGRO: // TODO: try using this for tpr as well, or vice versa?
 			eta_res_tps(res_fname, eta, eta_res);
 			break;
 		case efTPR:
