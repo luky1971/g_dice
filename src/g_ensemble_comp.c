@@ -46,15 +46,15 @@
 int main(int argc, char *argv[]) {
     const char *desc[] = {
         "g_ensemble_comp evaluates the difference between two conformational ensembles, R and R'.",
-                "Quanitification is in terms of a true metric that satisfies the conditions set forth by the zeroth law of thermodynamics.",
-                "The quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized, that is, 0<=eta<1,",
+        "Quanitification is in terms of a true metric that satisfies the conditions set forth by the zeroth law of thermodynamics.",
+        "The quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized, that is, 0<=eta<1,",
         "and takes up a value closer to unity as the difference between the ensembles increases.",
         "For two Gaussian distributions with identical standard deviations of 0.5 A,",
         "eta=0.68 represents a geometric center deviation of 1 A.\n",
         "The two ensembles are provided as two trajectory files specified by the -f1 and -f2 options (supported formats=xtc,trr,pdb).",
-                "We recommend that frames numbers in the trajectory files are in the range 2500-5000.",
+        "We recommend that frames numbers in the trajectory files are in the range 2500-5000.",
         "While the speed of the algorithm decreases with increase in ensemble size,", 
-                "the numerical accuracy of the calculation reduces with decrease in ensemble size,",
+        "the numerical accuracy of the calculation reduces with decrease in ensemble size,",
         "and a small number of frames may not provide a good representation of the ensemble.",
         "Note that if you are not interested in eta to reflect changes in whole molecule translation/rotation,",
         "then these degress of freedom need to be removed prior to ensemble comparison.",
@@ -62,15 +62,15 @@ int main(int argc, char *argv[]) {
         "in the two ensembles on to one single representative structure, such as the x-ray structure",
         "For this, we recommend the use of trjconv with the -fit rot+trans option.\n"
         "By default, differences (eta) are estimated for all atoms, but comparisons can be done for a smaller specific group of atoms,",
-                "which can be selected from index files -n1 and -n2. ",
-                "The average eta can also be calculated for each residue specified in a structure file given by -res (.pdb and .gro are supported).\n",
+        "which can be selected from index files -n1 and -n2. ",
+        "The average eta can also be calculated for each residue specified in a structure file given by -res (.pdb and .gro are supported).\n",
         "Overlaps are estimated by training a support vector machine in a pre-defined Hilbert space specified by",
         "the width of the RDF Kernel (gamma=0.4) and",
         "the maximum value that can be taken up by the Lagrange multiplier (C=100.0).", 
-                "The values of C and gamma can be changed with -c and -g,",
-                "but such changes may increase mean absolute error (MAE=3.26%) of the method.\n",
-                "By default, g_ensemble_comp is parallelized if compiled with OpenMP. To disable parallelization, add the option -nopar.\n",
-                "Methodoligical details and example applications can be found in\n",
+        "The values of C and gamma can be changed with -c and -g,",
+        "but such changes may increase mean absolute error (MAE=3.26%) of the method.\n",
+        "By default, g_ensemble_comp is parallelized if compiled with OpenMP. To disable parallelization, add the option -nopar.\n",
+        "Methodoligical details and example applications can be found in\n",
         "Leighty and Varma, JCTC, 2013, 9: 868-875.\n",
         "Varma, Botlani and Leighty, Proteins, 2014, 82: 3241-3254.\n",
         "Dutta, Botlani and Varma, JPC B, 2014, 118: 14795-14807.\n"
@@ -122,9 +122,7 @@ int main(int argc, char *argv[]) {
         calc_eta_res(fnames[eRES1], eta, natoms, &eta_res);
         save_eta_res(&eta_res, fnames[eETA_RES]);
 
-        sfree(eta_res.res_nums);
-        sfree(eta_res.res_names);
-        sfree(eta_res.avg_etas);
+        free_eta_res(&eta_res);
     }
 
     sfree(eta);

@@ -108,7 +108,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
     }
     else { // If no index file, set default indices as 0 to natoms - 1
         snew(indx1[0], *natoms);
-        for(i = 0; i < *natoms; i++) {
+        for(i = 0; i < *natoms; ++i) {
             indx1[0][i] = i;
         }
     }
@@ -132,7 +132,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
     traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, *natoms, &probs);
 
     /* No longer need original vectors and index data */
-    for(i = 0; i < nframes; i++) {
+    for(i = 0; i < nframes; ++i) {
         sfree(x1[i]);
         sfree(x2[i]);
     }
@@ -157,8 +157,8 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
     calc_eta(models, *natoms, nframes, *eta);
 
     /* Clean up */
-    sfree(probs); // Don't free the data within probs, will cause error
-    for(i = 0; i < *natoms; i++) {
+    sfree(probs); // Don't free the data within probs, will cause error. TODO: FIX!
+    for(i = 0; i < *natoms; ++i) {
         svm_free_model_content(models[i]);
         svm_free_and_destroy_model(&(models[i]));
     }
@@ -174,22 +174,22 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
-    for(i = 0; i < nframes; i++) {
+    for(i = 0; i < nframes; ++i) {
         targets[i] = LABEL1; // trajectory 1
     }
-    for(; i < nvecs; i++) {
+    for(; i < nvecs; ++i) {
         targets[i] = LABEL2; // trajectory 2
     }
 
     /* Construct svm problems */
     snew(*probs, natoms);
     int cur_atom, cur_frame, cur_data;
-    for(cur_atom = 0; cur_atom < natoms; cur_atom++) {
+    for(cur_atom = 0; cur_atom < natoms; ++cur_atom) {
         (*probs)[cur_atom].l = nvecs;
         (*probs)[cur_atom].y = targets;
         snew((*probs)[cur_atom].x, nvecs);
         // Insert positions from traj1
-        for(cur_frame = 0; cur_frame < nframes; cur_frame++) {
+        for(cur_frame = 0; cur_frame < nframes; ++cur_frame) {
             snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
             for(i = 0; i < 3; i++) {
                 (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
@@ -198,7 +198,7 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
             (*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
         }
         // Insert positions from traj2
-        for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; cur_frame++, cur_data++) {
+        for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; ++cur_frame, ++cur_data) {
             snew((*probs)[cur_atom].x[cur_data], 4);
             for(i = 0; i < 3; i++) {
                 (*probs)[cur_atom].x[cur_data][i].index = i + 1;
@@ -233,7 +233,7 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c,
     /* Train svm */
     int i;
 #pragma omp parallel for if(parallel) schedule(dynamic) private(i) shared(num_probs,models,probs,param)
-    for(i = 0; i < num_probs; i++) {
+    for(i = 0; i < num_probs; ++i) {
     #if defined _OPENMP && defined DEBUG
         print_log("%d threads running svm-train.\n", omp_get_num_threads());
     #endif
@@ -246,7 +246,7 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
 
     print_log("Calculating eta values...\n");
 
-    for(i = 0; i < num_models; i++) {
+    for(i = 0; i < num_models; ++i) {
         eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (real)num_frames);
     }
 }
@@ -392,7 +392,7 @@ static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
 
 static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
     real *sums;
-    int *n, i, j;
+    int *n, i;
 
     print_log("Calculating residue eta values...\n");
 
@@ -404,19 +404,19 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
     snew(n, atoms->nres);
 
     // Add up sums
-    for(i = 0; i < atoms->nr; i++) {
+    for(i = 0; i < atoms->nr; ++i) {
         sums[atoms->atom[i].resind] += eta[i];
         n[atoms->atom[i].resind]++;
     }
 
     // Calculate average etas
-    for(i = 0; i < atoms->nres; i++) {
+    for(i = 0; i < atoms->nres; ++i) {
         eta_res->avg_etas[i] = sums[i] / n[i];
     }
 
     // Store residue info in eta_res_t struct
     eta_res->nres = atoms->nres;
-    for(i = 0; i < atoms->nres; i++) {
+    for(i = 0; i < atoms->nres; ++i) {
         eta_res->res_nums[i] = atoms->resinfo[i].nr;
         eta_res->res_names[i] = *(atoms->resinfo[i].name);
     }
@@ -472,4 +472,14 @@ void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...
     va_start(arg, fmt);
     gmx_fatal(fatal_errno, file, line, fmt, arg);
     va_end(arg);
+}
+
+/********************************************************
+ * Cleanup functions
+ ********************************************************/
+
+void free_eta_res(eta_res_t *eta_res) {
+    sfree(eta_res->res_nums);
+    sfree(eta_res->res_names);
+    sfree(eta_res->avg_etas);
 }

@@ -125,7 +125,7 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname);
  */
 
 void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv);
-/* Reads a trajectory file.
+/* Reads a trajectory file. rvec **x is position coordinates indexed x[frame #][atom #]
  * 2D memory is allocated for x.
  */
 
@@ -148,6 +148,14 @@ void print_log(char const *fmt, ...);
 void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...);
 /* Logs fatal error to logfile and also calls gmx_fatal
  * Hint: Use FARGS for first 3 arguments.
+ */
+
+/********************************************************
+ * Cleanup functions
+ ********************************************************/
+
+void free_eta_res(eta_res_t *eta_res);
+/* Frees the dynaimc memory in an eta_res_t struct
  */
 
 #endif
