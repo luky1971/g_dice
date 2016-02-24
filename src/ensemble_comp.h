@@ -76,10 +76,10 @@ enum {eTRAJ1, eTRAJ2, eNDX1, eNDX2, eRES1, eETA_ATOM, eETA_RES, eNUMFILES};
 
 /* Struct for holding residue eta data */
 typedef struct {
-	int nres; // number of residues
-	int *res_nums; // array of residue numbers
-	const char **res_names; // array of names of the residues
-	real *avg_etas; // array of the average eta value of each residue
+    int nres; // number of residues
+    int *res_nums; // array of residue numbers
+    const char **res_names; // array of names of the residues
+    real *avg_etas; // array of the average eta value of each residue
 } eta_res_t;
 
 
