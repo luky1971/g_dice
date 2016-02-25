@@ -34,7 +34,8 @@ Kernel (gamma=0.4) and the maximum value that can be taken up by the
 Lagrange multiplier (C=100.0). The values of C and gamma can be changed with -c and -g,
 but such changes may increase mean absolute error (MAE=3.26%) of the method.
 
-By default, g_ensemble_comp is parallelized if compiled with OpenMP. To disable parallelization, add the option -nopar.
+By default, g_ensemble_comp is parallelized with OpenMP (see installation instructions below).
+To set the number of threads at runtime, set -nthreads X where X is the number of threads to use. The default behavior is to use the maximum number of cores available.
 
 Methodoligical details and example applications can be found in
 Leighty and Varma, JCTC, 2013, 9: 868-875.

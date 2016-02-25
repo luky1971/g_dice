@@ -1,6 +1,7 @@
 CC = gcc
 CXX = g++
 CFLAGS += -std=c99 -O3
+# CFLAGS += -std=c99 -g -DEC_DEBUG
 # CFLAGS += -std=c99 -g
 
 PARALLEL = 1

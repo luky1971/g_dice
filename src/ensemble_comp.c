@@ -1,48 +1,26 @@
 /*
- * This program uses the GROMACS molecular simulation package API.
+ * Copyright 2016 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma
  *
+ * This program uses the GROMACS molecular simulation package API.
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
  * Copyright (c) 2013,2014, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
- * and including many others, as listed in the AUTHORS file in the
- * top-level source directory and at http://www.gromacs.org.
- *
- * GROMACS is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2.1
- * of the License, or (at your option) any later version.
- *
- * GROMACS is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GROMACS; if not, see
- * http://www.gnu.org/licenses, or write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
- *
- * If you want to redistribute modifications to GROMACS, please
- * consider that scientific software is very special. Version
- * control is crucial - bugs must be traceable. We will be happy to
- * consider code for inclusion in the official distribution, but
- * derived work must not be called official GROMACS. Details are found
- * in the README & COPYING files - if they are missing, get the
- * official version at http://www.gromacs.org.
- *
- * To help us fund GROMACS development, we humbly ask that you cite
- * the research papers on the package. Check out http://www.gromacs.org.
+ * and including many others, as listed at http://www.gromacs.org.
 
  * g_ensemble_comp quantifies the difference between two conformational ensembles (two trajectory files) 
  * Quantification is in terms of a true metric, eta=1-Overlap 
- * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875. 
- * Written by Ahnaf Siddiqui, Mohsen Botlani-Esfahani and Sameer Varma.
+ * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875.
  */
 
 #include "ensemble_comp.h"
 
-#define FRAMESTEP 500 // The number of new frames by which to reallocate an array of length # trajectory frames
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// The number of new frames by which to reallocate an array of length # trajectory frames
+#define FRAMESTEP 500
 
 static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
 static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res);
@@ -51,8 +29,13 @@ static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res);
 
 static FILE *out_log = NULL;
 
-void ensemble_comp(const char *fnames[], real gamma, real c, 
-    real **eta, int *natoms, gmx_bool parallel, output_env_t *oenv) {
+void ensemble_comp(const char *fnames[], 
+                   real gamma, 
+                   real c, 
+                   real **eta, 
+                   int *natoms, 
+                   int nthreads, 
+                   output_env_t *oenv) {
     const char *io_error = "Input trajectory files must be .xtc, .trr, or .pdb!\n";
     const char *fr_error = "Input trajectories have differing numbers of frames!\n";
     const char *ndx_error = "Given index groups have differing numbers of atoms!\n";
@@ -150,7 +133,7 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
 
     /* Train SVM */
     snew(models, *natoms);
-    train_traj(probs, *natoms, gamma, c, parallel, models);
+    train_traj(probs, *natoms, gamma, c, nthreads, models);
 
     /* Calculate eta values */
     snew(*eta, *natoms);
@@ -165,7 +148,13 @@ void ensemble_comp(const char *fnames[], real gamma, real c,
     sfree(models);
 }
 
-void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nframes, int natoms, struct svm_problem **probs) {
+void traj2svm_probs(rvec **x1, 
+                    rvec **x2, 
+                    atom_id *indx1, 
+                    atom_id *indx2, 
+                    int nframes, 
+                    int natoms, 
+                    struct svm_problem **probs) {
     int nvecs = nframes * 2;
     int i;
     double *targets; // trajectory classification labels
@@ -209,8 +198,12 @@ void traj2svm_probs(rvec **x1, rvec **x2, atom_id *indx1, atom_id *indx2, int nf
     }
 }
 
-void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c, 
-    gmx_bool parallel, struct svm_model **models) {
+void train_traj(struct svm_problem *probs, 
+                int num_probs, 
+                real gamma, 
+                real c, 
+                int nthreads, 
+                struct svm_model **models) {
     struct svm_parameter param; // Parameters used for training
 
     print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
@@ -230,18 +223,28 @@ void train_traj(struct svm_problem *probs, int num_probs, real gamma, real c,
     param.shrinking = 1;
     param.probability = 0;
 
+#ifdef _OPENMP
+    if(nthreads > 0)
+        omp_set_num_threads(nthreads);
+    if(nthreads > 1 || nthreads <= 0)
+        print_log("svm training will be parallelized.\n");
+#endif
+
     /* Train svm */
     int i;
-#pragma omp parallel for if(parallel) schedule(dynamic) private(i) shared(num_probs,models,probs,param)
+#pragma omp parallel for schedule(dynamic) private(i) shared(num_probs,models,probs,param)
     for(i = 0; i < num_probs; ++i) {
-    #if defined _OPENMP && defined DEBUG
+    #if defined _OPENMP && defined EC_DEBUG
         print_log("%d threads running svm-train.\n", omp_get_num_threads());
     #endif
         models[i] = svm_train(&(probs[i]), &param);
     }
 }
 
-void calc_eta(struct svm_model **models, int num_models, int num_frames, real *eta) {
+void calc_eta(struct svm_model **models, 
+              int num_models, 
+              int num_frames, 
+              real *eta) {
     int i;
 
     print_log("Calculating eta values...\n");
@@ -251,7 +254,10 @@ void calc_eta(struct svm_model **models, int num_models, int num_frames, real *e
     }
 }
 
-void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_res) {
+void calc_eta_res(const char *res_fname, 
+                  real *eta, 
+                  int natoms, 
+                  eta_res_t *eta_res) {
     print_log("Reading residue info from %s...\n", res_fname);
     switch(fn2ftp(res_fname)) {
         case efPDB:
@@ -268,7 +274,9 @@ void calc_eta_res(const char *res_fname, real *eta, int natoms, eta_res_t *eta_r
     }
 }
 
-void save_eta(real *eta, int num_etas, const char *eta_fname) {
+void save_eta(real *eta, 
+              int num_etas, 
+              const char *eta_fname) {
     int i;
     FILE *f = fopen(eta_fname, "w");
 
@@ -281,7 +289,8 @@ void save_eta(real *eta, int num_etas, const char *eta_fname) {
     fclose(f);
 }
 
-void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname) {
+void save_eta_res(eta_res_t *eta_res, 
+                  const char *eta_res_fname) {
     int i;
     FILE *f = fopen(eta_res_fname, "w");
 
@@ -294,7 +303,11 @@ void save_eta_res(eta_res_t *eta_res, const char *eta_res_fname) {
     fclose(f);
 }
 
-void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, output_env_t *oenv) {
+void read_traj(const char *traj_fname, 
+               rvec ***x, 
+               int *nframes, 
+               int *natoms, 
+               output_env_t *oenv) {
     t_trxstatus *status = NULL;
     real t;
     matrix box;
@@ -323,7 +336,10 @@ void read_traj(const char *traj_fname, rvec ***x, int *nframes, int *natoms, out
     close_trx(status);
 }
 
-static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res) {
+static void eta_res_pdb(const char *pdb_fname, 
+                        real *eta, 
+                        int natoms, 
+                        eta_res_t *eta_res) {
     char title[256];
     t_atoms atoms;
     rvec *x;
@@ -355,7 +371,9 @@ static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t 
 }
 
 // Try res_tpx for gro and tpr instead of this.
-static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res) {
+static void eta_res_tps(const char *tps_file, 
+                        real *eta, 
+                        eta_res_t *eta_res) {
     char title[256];
     t_topology top;
     rvec *x = NULL;
@@ -379,7 +397,9 @@ static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res) {
 }
 
 // TODO: Does this work for gro files generated by grompp etc?
-static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
+static void eta_res_tpx(const char *tpr_fname, 
+                        real *eta, 
+                        eta_res_t *eta_res) {
     t_inputrec ir;
     gmx_mtop_t mtop;
     matrix box;
@@ -390,7 +410,9 @@ static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res) {
     f_calc_eta_res(eta, &(mtop.moltype->atoms), eta_res);
 }
 
-static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res) {
+static void f_calc_eta_res(real *eta, 
+                           t_atoms *atoms, 
+                           eta_res_t *eta_res) {
     real *sums;
     int *n, i;
 
@@ -458,7 +480,10 @@ void print_log(char const *fmt, ...) {
     }
 }
 
-void log_fatal(int fatal_errno, const char *file, int line, char const *fmt, ...) {
+void log_fatal(int fatal_errno, 
+               const char *file, 
+               int line, 
+               char const *fmt, ...) {
     va_list arg;
     if(out_log == NULL) {
         init_log("etalog.txt", file);
