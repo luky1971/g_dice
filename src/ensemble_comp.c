@@ -140,7 +140,16 @@ void ensemble_comp(const char *fnames[],
     calc_eta(models, *natoms, nframes, *eta);
 
     /* Clean up */
-    sfree(probs); // Don't free the data within probs, will cause error. TODO: FIX!
+    if(*natoms > 0)
+        sfree(probs[0].y);
+    for(i = 0; i < *natoms; ++i) {
+        for(int j = 0; j < nframes * 2; ++j) {
+            sfree(probs[i].x[j]);
+        }
+        sfree(probs[i].x);
+    }
+    sfree(probs);
+    
     for(i = 0; i < *natoms; ++i) {
         svm_free_model_content(models[i]);
         svm_free_and_destroy_model(&(models[i]));
@@ -181,7 +190,7 @@ void traj2svm_probs(rvec **x1,
         for(cur_frame = 0; cur_frame < nframes; ++cur_frame) {
             snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
             for(i = 0; i < 3; ++i) {
-                (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 0:x, 1:y, 2:z
+                (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 1:x, 2:y, 3:z
                 (*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
             }
             (*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
