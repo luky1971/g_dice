@@ -331,8 +331,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 		eta_dih->ndih = ndih;
 
 		snew(eta_dih->atoms, ndih * 4);
-		int i;
-		for(i = 0; i < ndih; ++i) {
+		for(int i = 0; i < ndih; ++i) {
 			eta_dih->atoms[4*i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
 			eta_dih->atoms[4*i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
 			eta_dih->atoms[4*i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
@@ -353,8 +352,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 		calc_eta(models, ndih, nframes, eta_dih->eta);
 
 		// Free memory
-		int i;
-		for(i = 0; i < nframes; i++) {
+		for(int i = 0; i < nframes; i++) {
 			sfree(x1[i]);
 			sfree(x2[i]);
 		}
@@ -362,7 +360,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 		sfree(x2);
 
 		sfree(probs);
-		for(i = 0; i < ndih; i++) {
+		for(int i = 0; i < ndih; i++) {
 			svm_free_model_content(models[i]);
 			svm_free_and_destroy_model(&(models[i]));
 		}
