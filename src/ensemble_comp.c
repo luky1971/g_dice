@@ -312,11 +312,11 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 
 					snew(eta_dih->atoms, ndih * 4);
 					int i;
-					for(i = 0; i < ndih; i++) {
-						eta_dih->atoms[i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
-						eta_dih->atoms[i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
-						eta_dih->atoms[i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
-						eta_dih->atoms[i+3] = top.idef.il[F_PDIHS].iatoms[i*5+4];
+					for(i = 0; i < ndih; ++i) {
+						eta_dih->atoms[4*i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
+						eta_dih->atoms[4*i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
+						eta_dih->atoms[4*i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
+						eta_dih->atoms[4*i+3] = top.idef.il[F_PDIHS].iatoms[i*5+4];
 					}
 				}
 				else {
@@ -348,11 +348,11 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 
 				snew(eta_dih->atoms, ndih * 4);
 				int i;
-				for(i = 0; i < ndih; i++) {
-					eta_dih->atoms[i] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+1];
-					eta_dih->atoms[i+1] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+2];
-					eta_dih->atoms[i+2] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+3];
-					eta_dih->atoms[i+3] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+4];
+				for(i = 0; i < ndih; ++i) {
+					eta_dih->atoms[4*i] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+1];
+					eta_dih->atoms[4*i+1] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+2];
+					eta_dih->atoms[4*i+2] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+3];
+					eta_dih->atoms[4*i+3] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+4];
 				}
 
 				done_mtop(&mtop, TRUE);
