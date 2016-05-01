@@ -287,82 +287,67 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 	struct svm_problem *probs;
 	struct svm_model **models;
 
-	gmx_bool success = TRUE;
+	t_ilist *ilist = NULL;
+	t_topology top;
+	gmx_mtop_t mtop;
 
 	switch(fn2ftp(fnames[eTOP1])) {
 		case efGRO:
 			{
-				t_topology top;
-
 				read_top_gro(fnames[eTOP1], &top);
 
 				if(top.idef.ntypes > 0) {
 					ndih = top.idef.il[F_PDIHS].nr;
-
-					read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms, oenv);
-					read_traj(fnames[eTRAJ2], &x2, &nframes, &natoms, oenv);
-
-					ilist2svm_probs(top.idef.il, x1, x2, nframes, &probs);
-
-					snew(models, ndih);
-					train_traj(probs, ndih, gamma, c, parallel, models);
-
-					// Construct eta_dih struct
-					eta_dih->ndih = ndih;
-
-					snew(eta_dih->atoms, ndih * 4);
-					int i;
-					for(i = 0; i < ndih; ++i) {
-						eta_dih->atoms[4*i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
-						eta_dih->atoms[4*i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
-						eta_dih->atoms[4*i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
-						eta_dih->atoms[4*i+3] = top.idef.il[F_PDIHS].iatoms[i*5+4];
-					}
+					ilist = top.idef.il;
 				}
 				else {
 					print_log("No interaction information found in %s. Skipping dihedral eta.\n", fnames[eTOP1]);
-					success = FALSE;
+					free_topology(&top);
 				}
-
-				free_topology(&top);
 			}
 			break;
 		case efTPR:
 			{
-				gmx_mtop_t mtop;
-
 				read_top_tpr(fnames[eTOP1], &mtop);
 
 				ndih = mtop.moltype->ilist[F_PDIHS].nr;
-
-				read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms, oenv);
-				read_traj(fnames[eTRAJ2], &x2, &nframes, &natoms, oenv);
-
-				ilist2svm_probs(mtop.moltype->ilist, x1, x2, nframes, &probs);
-
-				snew(models, ndih);
-				train_traj(probs, ndih, gamma, c, parallel, models);
-
-				// Construct eta_dih struct
-				eta_dih->ndih = ndih;
-
-				snew(eta_dih->atoms, ndih * 4);
-				int i;
-				for(i = 0; i < ndih; ++i) {
-					eta_dih->atoms[4*i] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+1];
-					eta_dih->atoms[4*i+1] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+2];
-					eta_dih->atoms[4*i+2] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+3];
-					eta_dih->atoms[4*i+3] = mtop.moltype->ilist[F_PDIHS].iatoms[i*5+4];
-				}
-
-				done_mtop(&mtop, TRUE);
+				ilist = mtop.moltype->ilist;
 			}
 			break;
 		default:
 			print_log("%s is not a supported filetype for topology information. Skipping dihedral eta.\n", fnames[eTOP1]);
 	}
 
-	if(success) {
+	if(ilist) {
+		read_traj(fnames[eTRAJ1], &x1, &nframes, &natoms, oenv);
+		read_traj(fnames[eTRAJ2], &x2, &nframes, &natoms, oenv);
+
+		ilist2svm_probs(ilist, x1, x2, nframes, &probs);
+
+		snew(models, ndih);
+		train_traj(probs, ndih, gamma, c, parallel, models);
+
+		// Construct eta_dih struct
+		eta_dih->ndih = ndih;
+
+		snew(eta_dih->atoms, ndih * 4);
+		int i;
+		for(i = 0; i < ndih; ++i) {
+			eta_dih->atoms[4*i] = top.idef.il[F_PDIHS].iatoms[i*5+1];
+			eta_dih->atoms[4*i+1] = top.idef.il[F_PDIHS].iatoms[i*5+2];
+			eta_dih->atoms[4*i+2] = top.idef.il[F_PDIHS].iatoms[i*5+3];
+			eta_dih->atoms[4*i+3] = top.idef.il[F_PDIHS].iatoms[i*5+4];
+		}
+
+		switch(fn2ftp(fnames[eTOP1])) {
+			case efGRO:
+				free_topology(&top);
+				break;
+			case efTPR:
+				done_mtop(&mtop, TRUE);
+				break;
+		}
+
 		// Calculate eta
 		snew(eta_dih->eta, ndih);
 		calc_eta(models, ndih, nframes, eta_dih->eta);
@@ -382,9 +367,11 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 			svm_free_and_destroy_model(&(models[i]));
 		}
 		sfree(models);
+
+		return TRUE;
 	}
 
-	return success;
+	return FALSE;
 }
 
 /********************************************************
