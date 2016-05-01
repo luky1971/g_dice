@@ -310,7 +310,7 @@ gmx_bool calc_eta_dihedrals(const char *fnames[], real gamma, real c, gmx_bool p
 			{
 				read_top_tpr(fnames[eTOP1], &mtop);
 
-				ndih = mtop.moltype->ilist[F_PDIHS].nr;
+				ndih = mtop.moltype->ilist[F_PDIHS].nr; // TODO: there are multiple moltypes, so convert this to t_topology to get them all!
 				ilist = mtop.moltype->ilist;
 			}
 			break;
