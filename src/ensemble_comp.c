@@ -501,14 +501,19 @@ static void f_calc_eta_res(eta_dat_t *eta_dat,
  * Logging functions
  ********************************************************/
 
-void init_log(const char *logfile, const char *program) {
+void init_log(const char *logfile, int argc, char *argv[]) {
     out_log = fopen(logfile, "a");
 
     time_t t = time(NULL);
     struct tm *ltime = localtime(&t);
-    fprintf(out_log, "\n%s run: %d-%d-%d %d:%d:%d\n",
-        program, ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900,
-        ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+
+    fprintf(out_log, "\n");
+	for(int i = 0; i < argc; ++i) {
+		fprintf(out_log, "%s ", argv[i]);
+	}
+    fprintf(out_log, "\nRun: %d-%d-%d %d:%d:%d\n",
+		ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900,
+		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
 }
 
 void close_log() {
@@ -520,9 +525,6 @@ void print_log(char const *fmt, ...) {
     va_start(arg, fmt);
     vprintf(fmt, arg);
     va_end(arg);
-    if (out_log == NULL) {
-        init_log("etalog.txt", __FILE__);
-    }
     if (out_log != NULL) {
         va_start(arg, fmt);
         vfprintf(out_log, fmt, arg);
@@ -535,9 +537,6 @@ void log_fatal(int fatal_errno,
                int line,
                char const *fmt, ...) {
     va_list arg;
-    if (out_log == NULL) {
-        init_log("etalog.txt", file);
-    }
     if (out_log != NULL) {
         va_start(arg, fmt);
         fprintf(out_log, "Fatal error in source file %s line %d: ", file, line);

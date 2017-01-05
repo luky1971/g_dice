@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     eta_dat_t eta_dat;
     init_eta_dat(&eta_dat);
 
-    init_log("eta.log", argv[0]);
+    init_log("eta.log", argc, argv);
 
     t_filenm fnm[] = {
         {efTRX, "-f1", "traj1.xtc", ffREAD},

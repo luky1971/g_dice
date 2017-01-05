@@ -159,7 +159,7 @@ void read_traj(const char *traj_fname,
  * Logging functions
  ********************************************************/
 
-void init_log(const char *logfile, const char *program);
+void init_log(const char *logfile, int argc, char *argv[]);
 /* Opens the logfile and logs initial time/date. Remember to close_log() at end of program.
  */
 
