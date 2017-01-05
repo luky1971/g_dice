@@ -1,4 +1,6 @@
 *.log
+*.so
+*.so.*
 *.o
 *.out
 .DS_STORE

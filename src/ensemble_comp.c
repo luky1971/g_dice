@@ -42,7 +42,9 @@ void init_eta_dat(eta_dat_t *eta_dat) {
     eta_dat->res_IDs = NULL;
     eta_dat->res_names = NULL;
     eta_dat->res_natoms = NULL;
-    eta_dat->avg_etas = NULL;
+    eta_dat->res_eta = NULL;
+
+    eta_dat->natoms_all = 0;
 }
 
 void free_eta_dat(eta_dat_t *eta_dat) {
@@ -51,7 +53,7 @@ void free_eta_dat(eta_dat_t *eta_dat) {
     if (eta_dat->res_IDs)    sfree(eta_dat->res_IDs);
     if (eta_dat->res_names)  sfree(eta_dat->res_names);
     if (eta_dat->res_natoms) sfree(eta_dat->res_natoms);
-    if (eta_dat->avg_etas)   sfree(eta_dat->avg_etas);
+    if (eta_dat->res_eta)    sfree(eta_dat->res_eta);
 }
 
 
@@ -89,10 +91,14 @@ void ensemble_comp(eta_dat_t *eta_dat) {
             log_fatal(FARGS, io_error);
     }
 
-    /* In case traj files have different numbers of frames or atoms */
-    if(nframes != nframes2) {
+    /* In case traj files have different numbers of frames */
+    if (nframes != nframes2) {
         log_fatal(FARGS, fr_error);
     }
+
+    // Save total natoms before it is potentially changed by index data below.
+    // Might be needed, for example, by residue reading functions. */
+    eta_dat->natoms_all = eta_dat->natoms;
 
     /* Index data */
     const int NUMGROUPS = 1;
@@ -105,26 +111,26 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     snew(grp_names, NUMGROUPS);
 
     /* If an index file was given, get atom group with indices that will be trained */
-    if(eta_dat->fnames[eNDX1] != NULL) {
+    if (eta_dat->fnames[eNDX1] != NULL) {
         rd_index(eta_dat->fnames[eNDX1], NUMGROUPS, isize, indx1, grp_names);
         eta_dat->natoms = isize[0];
     }
     else { // If no index file, set default indices as 0 to natoms - 1
         snew(indx1[0], eta_dat->natoms);
-        for(i = 0; i < eta_dat->natoms; ++i) {
+        for (i = 0; i < eta_dat->natoms; ++i) {
             indx1[0][i] = i;
         }
     }
-    if(eta_dat->fnames[eNDX2] != NULL) {
+    if (eta_dat->fnames[eNDX2] != NULL) {
         snew(isize2, NUMGROUPS);
         snew(indx2, NUMGROUPS);
         rd_index(eta_dat->fnames[eNDX2], NUMGROUPS, isize2, indx2, grp_names);
-        if(isize2[0] != eta_dat->natoms) {
+        if (isize2[0] != eta_dat->natoms) {
             log_fatal(FARGS, ndx_error);
         }
     }
     else {
-        if(natoms2 != eta_dat->natoms) {
+        if (natoms2 != eta_dat->natoms) {
             log_fatal(FARGS, natom_error);
         }
         indx2 = indx1;
@@ -135,7 +141,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, eta_dat->natoms, &probs);
 
     /* No longer need original vectors */
-    for(i = 0; i < nframes; ++i) {
+    for (i = 0; i < nframes; ++i) {
         sfree(x1[i]);
         sfree(x2[i]);
     }
@@ -146,7 +152,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     sfree(isize);
     sfree(indx1);
     sfree(grp_names);
-    if(eta_dat->fnames[eNDX2] != NULL) {
+    if (eta_dat->fnames[eNDX2] != NULL) {
         sfree(isize2);
         sfree(indx2[0]);
         sfree(indx2);
@@ -161,17 +167,17 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     calc_eta(models, eta_dat->natoms, nframes, eta_dat->eta);
 
     /* Clean up */
-    if(eta_dat->natoms > 0)
+    if (eta_dat->natoms > 0)
         sfree(probs[0].y);
-    for(i = 0; i < eta_dat->natoms; ++i) {
-        for(int j = 0; j < nframes * 2; ++j) {
+    for (i = 0; i < eta_dat->natoms; ++i) {
+        for (int j = 0; j < nframes * 2; ++j) {
             sfree(probs[i].x[j]);
         }
         sfree(probs[i].x);
     }
     sfree(probs);
 
-    for(i = 0; i < eta_dat->natoms; ++i) {
+    for (i = 0; i < eta_dat->natoms; ++i) {
         svm_free_model_content(models[i]);
         svm_free_and_destroy_model(&(models[i]));
     }
@@ -198,33 +204,33 @@ void traj2svm_probs(rvec **x1,
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
-    for(i = 0; i < nframes; ++i) {
+    for (i = 0; i < nframes; ++i) {
         targets[i] = LABEL1; // trajectory 1
     }
-    for(; i < nvecs; ++i) {
+    for (; i < nvecs; ++i) {
         targets[i] = LABEL2; // trajectory 2
     }
 
     /* Construct svm problems */
     snew(*probs, natoms);
     int cur_atom, cur_frame, cur_data;
-    for(cur_atom = 0; cur_atom < natoms; ++cur_atom) {
+    for (cur_atom = 0; cur_atom < natoms; ++cur_atom) {
         (*probs)[cur_atom].l = nvecs;
         (*probs)[cur_atom].y = targets;
         snew((*probs)[cur_atom].x, nvecs);
         // Insert positions from traj1
-        for(cur_frame = 0; cur_frame < nframes; ++cur_frame) {
+        for (cur_frame = 0; cur_frame < nframes; ++cur_frame) {
             snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
-            for(i = 0; i < 3; ++i) {
+            for (i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 1:x, 2:y, 3:z
                 (*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
             }
             (*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
         }
         // Insert positions from traj2
-        for(cur_frame = 0, cur_data = nframes; cur_frame < nframes; ++cur_frame, ++cur_data) {
+        for (cur_frame = 0, cur_data = nframes; cur_frame < nframes; ++cur_frame, ++cur_data) {
             snew((*probs)[cur_atom].x[cur_data], 4);
-            for(i = 0; i < 3; ++i) {
+            for (i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_data][i].index = i + 1;
                 (*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i] * 10.0;
             }
@@ -259,16 +265,16 @@ void train_traj(struct svm_problem *probs,
     param.probability = 0;
 
 #ifdef _OPENMP
-    if(nthreads > 0)
+    if (nthreads > 0)
         omp_set_num_threads(nthreads);
-    if(nthreads > 1 || nthreads <= 0)
+    if (nthreads > 1 || nthreads <= 0)
         print_log("svm training will be parallelized.\n");
 #endif
 
     /* Train svm */
     int i;
 #pragma omp parallel for schedule(dynamic) private(i) shared(num_probs,models,probs,param)
-    for(i = 0; i < num_probs; ++i) {
+    for (i = 0; i < num_probs; ++i) {
     #if defined _OPENMP && defined EC_DEBUG
         print_log("%d threads running svm-train.\n", omp_get_num_threads());
     #endif
@@ -284,7 +290,7 @@ void calc_eta(struct svm_model **models,
 
     print_log("Calculating eta values...\n");
 
-    for(i = 0; i < num_models; ++i) {
+    for (i = 0; i < num_models; ++i) {
         eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (real)num_frames);
     }
 }
@@ -302,43 +308,59 @@ void calc_eta_res(eta_dat_t *eta_dat) {
             eta_res_tpx(eta_dat);
             break;
         default:
-            print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n", res_fname);
+            print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n",
+                eta_dat->fnames[eRES1]);
     }
 }
+
 
 void save_eta(eta_dat_t *eta_dat) {
-    int i;
     FILE *f = fopen(eta_dat->fnames[eETA_ATOM], "w");
 
-    print_log("Saving eta values to %s...\n", eta_dat->fnames[eETA_ATOM]);
-    fprintf(f, "# ATOMID\tETA\n");
-    for(i = 0; i < eta_dat->natoms; ++i) {
-        // TODO: it seems that the atom IDs stored in eta_dat->atom_IDs
-        // are 1 lower than the IDs stored in the index file.
-        // Is this normal?
-        fprintf(f, "%d\t%f\n", eta_dat->atom_IDs[i], eta_dat->eta[i]);
+    // atom etas
+    if (f) {
+        print_log("Saving eta values to %s...\n", eta_dat->fnames[eETA_ATOM]);
+        fprintf(f, "# ATOM\tETA\n");
+        for (int i = 0; i < eta_dat->natoms; ++i) {
+            // TODO: it seems that the atom IDs stored in eta_dat->atom_IDs
+            // are 1 lower than the IDs stored in the index file.
+            // Is this normal?
+            fprintf(f, "%d\t%f\n", eta_dat->atom_IDs[i], eta_dat->eta[i]);
+        }
+
+        fclose(f);
+        f = NULL;
+    }
+    else {
+        print_log("Failed to open file %s for saving eta values.\n",
+            eta_dat->fnames[eETA_ATOM]);
     }
 
-    fclose(f);
+    // residue etas
+    if (eta_dat->res_eta) {
+        f = fopen(eta_dat->fnames[eETA_RES], "w");
 
-    if (eta_dat->avg_etas) {
-        // TODO: save residue etas
+        if (f) {
+            print_log("Saving residue eta values to %s...\n",
+                eta_dat->fnames[eETA_RES]);
+
+            fprintf(f, "# RES\tNATOMS\tETA\n");
+            for (int i = 0; i < eta_dat->nres; ++i) {
+                fprintf(f, "%d%s\t%d\t%f\n", eta_dat->res_IDs[i],
+                                             eta_dat->res_names[i],
+                                             eta_dat->res_natoms[i],
+                                             eta_dat->res_eta[i]);
+            }
+
+            fclose(f);
+            f = NULL;
+        }
+        else {
+            print_log("Failed to open file %s for saving residue eta values.\n",
+                eta_dat->fnames[eETA_RES]);
+        }
     }
 }
-
-// void save_eta_res(eta_res_t *eta_res,
-//                   const char *eta_res_fname) {
-//     int i;
-//     FILE *f = fopen(eta_res_fname, "w");
-//
-//     print_log("Saving residue eta values to %s...\n", eta_res_fname);
-//     fprintf(f, "# RES\tETA\n");
-//     for(i = 0; i < eta_res->nres; ++i) {
-//         fprintf(f, "%d%s\t%f\n", eta_res->res_IDs[i], eta_res->res_names[i], eta_res->avg_etas[i]);
-//     }
-//
-//     fclose(f);
-// }
 
 void read_traj(const char *traj_fname,
                rvec ***x,
@@ -358,7 +380,7 @@ void read_traj(const char *traj_fname,
 
     do {
         ++(*nframes);
-        if(*nframes >= est_frames) {
+        if (*nframes >= est_frames) {
             est_frames += FRAMESTEP;
             srenew(*x, est_frames);
         }
@@ -378,16 +400,16 @@ static void eta_res_pdb(eta_dat_t *eta_dat) {
     t_atoms atoms;
     rvec *x;
 
-    atoms.nr = natoms;
-    snew(atoms.atom, natoms);
-    snew(atoms.atomname, natoms);
-    snew(atoms.atomtype, natoms);
-    snew(atoms.atomtypeB, natoms);
-    atoms.nres = natoms;
-    snew(atoms.resinfo, natoms);
-    snew(atoms.pdbinfo, natoms);
+    atoms.nr = eta_dat->natoms_all;
+    snew(atoms.atom, eta_dat->natoms_all);
+    snew(atoms.atomname, eta_dat->natoms_all);
+    snew(atoms.atomtype, eta_dat->natoms_all);
+    snew(atoms.atomtypeB, eta_dat->natoms_all);
+    atoms.nres = eta_dat->natoms_all;
+    snew(atoms.resinfo, eta_dat->natoms_all);
+    snew(atoms.pdbinfo, eta_dat->natoms_all);
 
-    snew(x, natoms);
+    snew(x, eta_dat->natoms_all);
 
     read_pdb_conf(eta_dat->fnames[eRES1], title, &atoms, x, NULL, NULL, FALSE, NULL);
 
@@ -449,30 +471,31 @@ static void f_calc_eta_res(eta_dat_t *eta_dat,
     snew(eta_dat->res_IDs, atoms->nres);
     snew(eta_dat->res_names, atoms->nres);
     snew(eta_dat->res_natoms, atoms->nres);
-    snew(eta_dat->avg_etas, atoms->nres);
+    snew(eta_dat->res_eta, atoms->nres);
     snew(sums, atoms->nres);
 
-    // Add up sums
-    // TODO: only sum the atoms that are in the indexes in atom_IDs
-    for(int i = 0; i < atoms->nr; ++i) {
-        sums[atoms->atom[i].resind] += eta_dat->eta[i];
-        ++(n[atoms->atom[i].resind]);
+    // Only sum the atoms that are in the indexes in atom_IDs
+    int resid;
+    for (int i = 0; i < eta_dat->natoms; ++i) {
+        resid = atoms->atom[eta_dat->atom_IDs[i]].resind;
+        sums[resid] += eta_dat->eta[i];
+        eta_dat->res_natoms[resid] += 1;
     }
 
     // Calculate average etas
-    for(int i = 0; i < atoms->nres; ++i) {
-        eta_res->avg_etas[i] = sums[i] / n[i];
+    for (int i = 0; i < atoms->nres; ++i) {
+        if (eta_dat->res_natoms[i] > 0)
+            eta_dat->res_eta[i] = sums[i] / eta_dat->res_natoms[i];
     }
 
     // Store residue info in eta_res_t struct
-    eta_res->nres = atoms->nres;
-    for(int i = 0; i < atoms->nres; ++i) {
-        eta_res->res_IDs[i] = atoms->resinfo[i].nr;
-        eta_res->res_names[i] = *(atoms->resinfo[i].name);
+    eta_dat->nres = atoms->nres;
+    for (int i = 0; i < atoms->nres; ++i) {
+        eta_dat->res_IDs[i] = atoms->resinfo[i].nr;
+        eta_dat->res_names[i] = *(atoms->resinfo[i].name);
     }
 
     sfree(sums);
-    sfree(n);
 }
 
 /********************************************************
@@ -498,10 +521,10 @@ void print_log(char const *fmt, ...) {
     va_start(arg, fmt);
     vprintf(fmt, arg);
     va_end(arg);
-    if(out_log == NULL) {
+    if (out_log == NULL) {
         init_log("etalog.txt", __FILE__);
     }
-    if(out_log != NULL) {
+    if (out_log != NULL) {
         va_start(arg, fmt);
         vfprintf(out_log, fmt, arg);
         va_end(arg);
@@ -513,10 +536,10 @@ void log_fatal(int fatal_errno,
                int line,
                char const *fmt, ...) {
     va_list arg;
-    if(out_log == NULL) {
+    if (out_log == NULL) {
         init_log("etalog.txt", file);
     }
-    if(out_log != NULL) {
+    if (out_log != NULL) {
         va_start(arg, fmt);
         fprintf(out_log, "Fatal error in source file %s line %d: ", file, line);
         vfprintf(out_log, fmt, arg);

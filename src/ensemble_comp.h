@@ -56,7 +56,7 @@ typedef struct {
 
     // eta output for atoms
     int natoms; // number of atoms
-    atom_id *atom_nums; // array of atom IDs, taken from fnames[eNDX1]. size = natoms
+    atom_id *atom_IDs; // array of atom IDs, taken from fnames[eNDX1]. size = natoms
     real *eta; // eta value of each atom. array size = natoms
 
     // eta output for residues
@@ -64,7 +64,14 @@ typedef struct {
     int *res_IDs; // array of residue IDs. size = nres
     const char **res_names; // names of the residues. array size = nres
     int *res_natoms; // number of atoms per residue. array size = nres
-    real *avg_etas; // average eta value of each residue. array size = nres
+    real *res_eta; // average eta value of each residue. array size = nres
+
+    // the following values may or may not be set, and are used
+    // internally by ensemble_comp.
+
+    // number of total atoms in each system
+    // including the ones excluded by index files.
+    int natoms_all;
 } eta_dat_t;
 
 
@@ -132,7 +139,7 @@ void calc_eta_res(eta_dat_t *eta_dat);
 /* Calculates average discriminability (eta) per residue using residue info in fnames[eRES1]
  * and the eta values per atom in the eta array.
  * Supported file formats for eRES1 include pdb and gro (tpr support is experimental).
- * Memory is allocated for res_IDs, res_names, and avg_etas.
+ * Memory is allocated for res_IDs, res_names, and res_eta.
  */
 
 void save_eta(eta_dat_t *eta_dat);
