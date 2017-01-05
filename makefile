@@ -1,5 +1,4 @@
-CC = gcc
-CXX = g++
+# Set CC and CXX to the compilers that were used to compile Gromacs
 CFLAGS += -std=c99 -O3
 # CFLAGS += -std=c99 -g -DEC_DEBUG
 # CFLAGS += -std=c99 -g
@@ -17,7 +16,8 @@ INSTALL = /usr/local/bin
 LIBS = -ldl
 
 ifeq ($(VGRO),5)
-INCGRO = -I$(GROMACS)/include/ \
+INCGRO = \
+	-I$(GROMACS)/include/ \
 	-I$(GROMACS)/include/gromacs/utility \
 	-I$(GROMACS)/include/gromacs/fileio \
 	-I$(GROMACS)/include/gromacs/commandline \
@@ -39,7 +39,7 @@ endif
 .PHONY: install clean
 
 $(BUILD)/g_ensemble_comp: $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o
-	make -C $(SVM) \
+	make svm.o -C $(SVM) \
 	&& $(CXX) $(CFLAGS) -o $(BUILD)/g_ensemble_comp $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o \
 	$(SVM)/svm.o $(LINKGRO) $(LIBGRO) $(LIBS)
 

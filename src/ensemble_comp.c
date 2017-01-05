@@ -185,7 +185,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
 
     /* If residue information given, calculate eta per residue */
     if (eta_dat->fnames[eRES1] != NULL) {
-        // TODO
+        calc_eta_res(eta_dat);
     }
 }
 
@@ -322,10 +322,9 @@ void save_eta(eta_dat_t *eta_dat) {
         print_log("Saving eta values to %s...\n", eta_dat->fnames[eETA_ATOM]);
         fprintf(f, "# ATOM\tETA\n");
         for (int i = 0; i < eta_dat->natoms; ++i) {
-            // TODO: it seems that the atom IDs stored in eta_dat->atom_IDs
-            // are 1 lower than the IDs stored in the index file.
-            // Is this normal?
-            fprintf(f, "%d\t%f\n", eta_dat->atom_IDs[i], eta_dat->eta[i]);
+            // Add 1 to the atom ID because Gromacs's stored ID
+            // is 1 lower than in given index files
+            fprintf(f, "%d\t%f\n", eta_dat->atom_IDs[i] + 1, eta_dat->eta[i]);
         }
 
         fclose(f);
