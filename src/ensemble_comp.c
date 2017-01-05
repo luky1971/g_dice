@@ -22,10 +22,10 @@
 // The number of new frames by which to reallocate an array of length # trajectory frames
 #define FRAMESTEP 500
 
-// static void eta_res_pdb(const char *pdb_fname, real *eta, int natoms, eta_res_t *eta_res);
-// static void eta_res_tps(const char *tps_file, real *eta, eta_res_t *eta_res);
-// static void eta_res_tpx(const char *tpr_fname, real *eta, eta_res_t *eta_res);
-// static void f_calc_eta_res(real *eta, t_atoms *atoms, eta_res_t *eta_res);
+static void eta_res_pdb(eta_dat_t *eta_dat);
+static void eta_res_tps(eta_dat_t *eta_dat);
+static void eta_res_tpx(eta_dat_t *eta_dat);
+static void f_calc_eta_res(eta_dat_t *eta_dat, t_atoms *atoms);
 
 static FILE *out_log = NULL;
 
@@ -36,20 +36,22 @@ void init_eta_dat(eta_dat_t *eta_dat) {
     eta_dat->oenv = NULL;
 
     eta_dat->natoms = 0;
-    eta_dat->atom_nums = NULL;
+    eta_dat->atom_IDs = NULL;
     eta_dat->eta = NULL;
     eta_dat->nres = 0;
-    eta_dat->res_nums = NULL;
+    eta_dat->res_IDs = NULL;
     eta_dat->res_names = NULL;
+    eta_dat->res_natoms = NULL;
     eta_dat->avg_etas = NULL;
 }
 
 void free_eta_dat(eta_dat_t *eta_dat) {
-    if (eta_dat->atom_nums) sfree(eta_dat->atom_nums);
-    if (eta_dat->eta)       sfree(eta_dat->eta);
-    if (eta_dat->res_nums)  sfree(eta_dat->res_nums);
-    if (eta_dat->res_names) sfree(eta_dat->res_names);
-    if (eta_dat->avg_etas)  sfree(eta_dat->avg_etas);
+    if (eta_dat->atom_IDs)   sfree(eta_dat->atom_IDs);
+    if (eta_dat->eta)        sfree(eta_dat->eta);
+    if (eta_dat->res_IDs)    sfree(eta_dat->res_IDs);
+    if (eta_dat->res_names)  sfree(eta_dat->res_names);
+    if (eta_dat->res_natoms) sfree(eta_dat->res_natoms);
+    if (eta_dat->avg_etas)   sfree(eta_dat->avg_etas);
 }
 
 
@@ -127,7 +129,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
         }
         indx2 = indx1;
     }
-    eta_dat->atom_nums = indx1[0]; // store atom IDs in output
+    eta_dat->atom_IDs = indx1[0]; // store atom IDs in output
 
     /* Construct svm problems */
     traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, eta_dat->natoms, &probs);
@@ -140,7 +142,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     sfree(x1);
     sfree(x2);
 
-    /* No longer need index junk (except for what we stored in atom_nums) */
+    /* No longer need index junk (except for what we stored in atom_IDs) */
     sfree(isize);
     sfree(indx1);
     sfree(grp_names);
@@ -287,25 +289,22 @@ void calc_eta(struct svm_model **models,
     }
 }
 
-// void calc_eta_res(const char *res_fname,
-//                   real *eta,
-//                   int natoms,
-//                   eta_res_t *eta_res) {
-//     print_log("Reading residue info from %s...\n", res_fname);
-//     switch(fn2ftp(res_fname)) {
-//         case efPDB:
-//             eta_res_pdb(res_fname, eta, natoms, eta_res);
-//             break;
-//         case efGRO: // TODO: try using this for tpr as well, or vice versa?
-//             eta_res_tps(res_fname, eta, eta_res);
-//             break;
-//         case efTPR:
-//             eta_res_tpx(res_fname, eta, eta_res);
-//             break;
-//         default:
-//             print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n", res_fname);
-//     }
-// }
+void calc_eta_res(eta_dat_t *eta_dat) {
+    print_log("Reading residue info from %s...\n", eta_dat->fnames[eRES1]);
+    switch(fn2ftp(eta_dat->fnames[eRES1])) {
+        case efPDB:
+            eta_res_pdb(eta_dat);
+            break;
+        case efGRO: // TODO: try using this for tpr as well, or vice versa?
+            eta_res_tps(eta_dat);
+            break;
+        case efTPR:
+            eta_res_tpx(eta_dat);
+            break;
+        default:
+            print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n", res_fname);
+    }
+}
 
 void save_eta(eta_dat_t *eta_dat) {
     int i;
@@ -314,10 +313,10 @@ void save_eta(eta_dat_t *eta_dat) {
     print_log("Saving eta values to %s...\n", eta_dat->fnames[eETA_ATOM]);
     fprintf(f, "# ATOMID\tETA\n");
     for(i = 0; i < eta_dat->natoms; ++i) {
-        // TODO: it seems that the atom IDs stored in eta_dat->atom_nums
+        // TODO: it seems that the atom IDs stored in eta_dat->atom_IDs
         // are 1 lower than the IDs stored in the index file.
         // Is this normal?
-        fprintf(f, "%d\t%f\n", eta_dat->atom_nums[i], eta_dat->eta[i]);
+        fprintf(f, "%d\t%f\n", eta_dat->atom_IDs[i], eta_dat->eta[i]);
     }
 
     fclose(f);
@@ -335,7 +334,7 @@ void save_eta(eta_dat_t *eta_dat) {
 //     print_log("Saving residue eta values to %s...\n", eta_res_fname);
 //     fprintf(f, "# RES\tETA\n");
 //     for(i = 0; i < eta_res->nres; ++i) {
-//         fprintf(f, "%d%s\t%f\n", eta_res->res_nums[i], eta_res->res_names[i], eta_res->avg_etas[i]);
+//         fprintf(f, "%d%s\t%f\n", eta_res->res_IDs[i], eta_res->res_names[i], eta_res->avg_etas[i]);
 //     }
 //
 //     fclose(f);
@@ -374,116 +373,107 @@ void read_traj(const char *traj_fname,
     close_trx(status);
 }
 
-// static void eta_res_pdb(const char *pdb_fname,
-//                         real *eta,
-//                         int natoms,
-//                         eta_res_t *eta_res) {
-//     char title[256];
-//     t_atoms atoms;
-//     rvec *x;
-//
-//     atoms.nr = natoms;
-//     snew(atoms.atom, natoms);
-//     snew(atoms.atomname, natoms);
-//     snew(atoms.atomtype, natoms);
-//     snew(atoms.atomtypeB, natoms);
-//     atoms.nres = natoms;
-//     snew(atoms.resinfo, natoms);
-//     snew(atoms.pdbinfo, natoms);
-//
-//     snew(x, natoms);
-//
-//     read_pdb_conf(pdb_fname, title, &atoms, x, NULL, NULL, FALSE, NULL);
-//
-//     sfree(x);
-//
-//     sfree(atoms.atomname);
-//     sfree(atoms.atomtype);
-//     sfree(atoms.atomtypeB);
-//     sfree(atoms.pdbinfo);
-//
-//     f_calc_eta_res(eta, &atoms, eta_res);
-//
-//     sfree(atoms.atom);
-//     sfree(atoms.resinfo);
-// }
-//
-// // Try res_tpx for gro and tpr instead of this.
-// static void eta_res_tps(const char *tps_file,
-//                         real *eta,
-//                         eta_res_t *eta_res) {
-//     char title[256];
-//     t_topology top;
-//     rvec *x = NULL;
-//     matrix box;
-//     int ePBC;
-//
-//     init_top(&top);
-//
-//     read_tps_conf(tps_file, title, &top, &ePBC, &x, NULL, box, FALSE);
-//
-//     f_calc_eta_res(eta, &(top.atoms), eta_res);
-//
-//     // Cannot use done_top(), causes error- pointer being freed was not allocated. See implementation in typedefs.c
-//     done_atom(&(top.atoms));
-//     done_symtab(&(top.symtab));
-//     done_block(&(top.cgs));
-//     done_block(&(top.mols));
-//     done_blocka(&(top.excls));
-//
-//     sfree(x);
-// }
-//
-// // TODO: Does this work for gro files generated by grompp etc?
-// static void eta_res_tpx(const char *tpr_fname,
-//                         real *eta,
-//                         eta_res_t *eta_res) {
-//     t_inputrec ir;
-//     gmx_mtop_t mtop;
-//     matrix box;
-//     int natoms, i;
-//
-//     read_tpx(tpr_fname, &ir, box, &natoms, NULL, NULL, NULL, &mtop);
-//
-//     f_calc_eta_res(eta, &(mtop.moltype->atoms), eta_res);
-// }
-//
-// static void f_calc_eta_res(real *eta,
-//                            t_atoms *atoms,
-//                            eta_res_t *eta_res) {
-//     real *sums;
-//     int *n, i;
-//
-//     print_log("Calculating residue eta values...\n");
-//
-//     snew(eta_res->res_nums, atoms->nres);
-//     snew(eta_res->res_names, atoms->nres);
-//     snew(eta_res->avg_etas, atoms->nres);
-//
-//     snew(sums, atoms->nres);
-//     snew(n, atoms->nres);
-//
-//     // Add up sums
-//     for(i = 0; i < atoms->nr; ++i) {
-//         sums[atoms->atom[i].resind] += eta[i];
-//         ++(n[atoms->atom[i].resind]);
-//     }
-//
-//     // Calculate average etas
-//     for(i = 0; i < atoms->nres; ++i) {
-//         eta_res->avg_etas[i] = sums[i] / n[i];
-//     }
-//
-//     // Store residue info in eta_res_t struct
-//     eta_res->nres = atoms->nres;
-//     for(i = 0; i < atoms->nres; ++i) {
-//         eta_res->res_nums[i] = atoms->resinfo[i].nr;
-//         eta_res->res_names[i] = *(atoms->resinfo[i].name);
-//     }
-//
-//     sfree(sums);
-//     sfree(n);
-// }
+static void eta_res_pdb(eta_dat_t *eta_dat) {
+    char title[256];
+    t_atoms atoms;
+    rvec *x;
+
+    atoms.nr = natoms;
+    snew(atoms.atom, natoms);
+    snew(atoms.atomname, natoms);
+    snew(atoms.atomtype, natoms);
+    snew(atoms.atomtypeB, natoms);
+    atoms.nres = natoms;
+    snew(atoms.resinfo, natoms);
+    snew(atoms.pdbinfo, natoms);
+
+    snew(x, natoms);
+
+    read_pdb_conf(eta_dat->fnames[eRES1], title, &atoms, x, NULL, NULL, FALSE, NULL);
+
+    sfree(x);
+
+    sfree(atoms.atomname);
+    sfree(atoms.atomtype);
+    sfree(atoms.atomtypeB);
+    sfree(atoms.pdbinfo);
+
+    f_calc_eta_res(eta_dat, &atoms);
+
+    sfree(atoms.atom);
+    sfree(atoms.resinfo);
+}
+
+// Try res_tpx for gro and tpr instead of this.
+static void eta_res_tps(eta_dat_t *eta_dat) {
+    char title[256];
+    t_topology top;
+    rvec *x = NULL;
+    matrix box;
+    int ePBC;
+
+    init_top(&top);
+
+    read_tps_conf(eta_dat->fnames[eRES1], title, &top, &ePBC, &x, NULL, box, FALSE);
+
+    f_calc_eta_res(eta_dat, &(top.atoms));
+
+    // Cannot use done_top(), causes error- pointer being freed was not allocated. See implementation in typedefs.c
+    done_atom(&(top.atoms));
+    done_symtab(&(top.symtab));
+    done_block(&(top.cgs));
+    done_block(&(top.mols));
+    done_blocka(&(top.excls));
+
+    sfree(x);
+}
+
+// TODO: Does this work for gro files generated by grompp etc?
+static void eta_res_tpx(eta_dat_t *eta_dat) {
+    t_inputrec ir;
+    gmx_mtop_t mtop;
+    matrix box;
+    int natoms, i;
+
+    read_tpx(eta_dat->fnames[eRES1], &ir, box, &natoms, NULL, NULL, NULL, &mtop);
+
+    f_calc_eta_res(eta_dat, &(mtop.moltype->atoms));
+}
+
+static void f_calc_eta_res(eta_dat_t *eta_dat,
+                           t_atoms *atoms) {
+    real *sums;
+
+    print_log("Calculating residue eta values...\n");
+
+    snew(eta_dat->res_IDs, atoms->nres);
+    snew(eta_dat->res_names, atoms->nres);
+    snew(eta_dat->res_natoms, atoms->nres);
+    snew(eta_dat->avg_etas, atoms->nres);
+    snew(sums, atoms->nres);
+
+    // Add up sums
+    // TODO: only sum the atoms that are in the indexes in atom_IDs
+    for(int i = 0; i < atoms->nr; ++i) {
+        sums[atoms->atom[i].resind] += eta_dat->eta[i];
+        ++(n[atoms->atom[i].resind]);
+    }
+
+    // Calculate average etas
+    for(int i = 0; i < atoms->nres; ++i) {
+        eta_res->avg_etas[i] = sums[i] / n[i];
+    }
+
+    // Store residue info in eta_res_t struct
+    eta_res->nres = atoms->nres;
+    for(int i = 0; i < atoms->nres; ++i) {
+        eta_res->res_IDs[i] = atoms->resinfo[i].nr;
+        eta_res->res_names[i] = *(atoms->resinfo[i].name);
+    }
+
+    sfree(sums);
+    sfree(n);
+}
 
 /********************************************************
  * Logging functions

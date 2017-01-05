@@ -56,13 +56,14 @@ typedef struct {
 
     // eta output for atoms
     int natoms; // number of atoms
-    atom_id *atom_nums; // array of atom IDs, taken from fnames[eNDX1]
+    atom_id *atom_nums; // array of atom IDs, taken from fnames[eNDX1]. size = natoms
     real *eta; // eta value of each atom. array size = natoms
 
     // eta output for residues
     int nres; // number of residues
-    int *res_nums; // array of residue IDs
-    const char **res_names; // array of names of the residues
+    int *res_IDs; // array of residue IDs. size = nres
+    const char **res_names; // names of the residues. array size = nres
+    int *res_natoms; // number of atoms per residue. array size = nres
     real *avg_etas; // average eta value of each residue. array size = nres
 } eta_dat_t;
 
@@ -88,7 +89,7 @@ void ensemble_comp(eta_dat_t *eta_dat);
  * You can initialize one using output_env_init() in Gromacs's oenv.h.
  *
  * If fnames[eRES1] is not NULL, will calculate average discriminability (eta)
- * per residue using the residue info in the given eRES1 file.
+ * per residue by calling calc_eta_res.
  */
 
 void traj2svm_probs(rvec **x1,
@@ -127,23 +128,15 @@ void calc_eta(struct svm_model **models,
  * and the given number of frames in each trajectory.
  */
 
-// void calc_eta_res(const char *res_fname,
-//                   real *eta,
-//                   int natoms,
-//                   eta_res_t *eta_res);
-/* Calculates average discriminability (eta) per residue using residue info in given file
- * and the eta values per atom in the given eta array.
- * Supported file formats include pdb and gro (tpr support is experimental).
- * Memory is allocated for the arrays in eta_res.
+void calc_eta_res(eta_dat_t *eta_dat);
+/* Calculates average discriminability (eta) per residue using residue info in fnames[eRES1]
+ * and the eta values per atom in the eta array.
+ * Supported file formats for eRES1 include pdb and gro (tpr support is experimental).
+ * Memory is allocated for res_IDs, res_names, and avg_etas.
  */
 
 void save_eta(eta_dat_t *eta_dat);
 /* Saves the given discriminability (eta) values in a text file with the given name.
- */
-
-// void save_eta_res(eta_res_t *eta_res,
-//                   const char *eta_res_fname);
-/* Saves the given discriminability (eta) residue values in a text file with the given name.
  */
 
 void read_traj(const char *traj_fname,
