@@ -69,8 +69,8 @@ If you want to build without OpenMP, set `PARALLEL=0`. You can also add compilat
 $ g_ensemble_comp -f1 traj1.xtc -f2 traj2.xtc
 ```
 
-Run `g_ensemble_comp -h` to get usage instructions. The instructions are also provided in the introductory paragraph above and also in the tutor directory.
+Run `g_ensemble_comp -h` to get detailed usage instructions. The instructions are also provided in the introductory paragraph above as well as the tutor directory.
 
 ### Copyright
-(c) 2015 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma  
+(c) 2017 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma  
 The code uses SVM libraries: LIBSVM copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
