@@ -200,7 +200,8 @@ void traj2svm_probs(rvec **x1,
     int i;
     double *targets; // trajectory classification labels
 
-    print_log("Constructing svm problems...\n");
+    print_log("Constructing svm problems for %d atoms in %d frames...\n",
+        natoms, nframes);
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
@@ -215,6 +216,9 @@ void traj2svm_probs(rvec **x1,
     snew(*probs, natoms);
     int cur_atom, cur_frame, cur_data;
     for (cur_atom = 0; cur_atom < natoms; ++cur_atom) {
+        printf("Atom %d...\r", cur_atom);
+        fflush(stdout);
+
         (*probs)[cur_atom].l = nvecs;
         (*probs)[cur_atom].y = targets;
         snew((*probs)[cur_atom].x, nvecs);
@@ -237,6 +241,8 @@ void traj2svm_probs(rvec **x1,
             (*probs)[cur_atom].x[cur_data][i].index = -1;
         }
     }
+    printf("\n");
+    fflush(stdout);
 }
 
 void train_traj(struct svm_problem *probs,
