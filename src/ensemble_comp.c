@@ -202,6 +202,7 @@ void traj2svm_probs(rvec **x1,
 
     print_log("Constructing svm problems for %d atoms in %d frames...\n",
         natoms, nframes);
+    flush_log();
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
@@ -254,6 +255,7 @@ void train_traj(struct svm_problem *probs,
     struct svm_parameter param; // Parameters used for training
 
     print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
+    flush_log();
 
     /* Set svm parameters */
     param.svm_type = C_SVC;
@@ -295,6 +297,7 @@ void calc_eta(struct svm_model **models,
     int i;
 
     print_log("Calculating eta values...\n");
+    flush_log();
 
     for (i = 0; i < num_models; ++i) {
         eta[i] = 1.0 - svm_get_nr_sv(models[i]) / (2.0 * (real)num_frames);
@@ -316,6 +319,7 @@ void calc_eta_res(eta_dat_t *eta_dat) {
         default:
             print_log("%s is not a supported filetype for residue information. Skipping eta residue calculation.\n",
                 eta_dat->fnames[eRES1]);
+            flush_log();
     }
 }
 
@@ -365,6 +369,7 @@ void save_eta(eta_dat_t *eta_dat) {
                 eta_dat->fnames[eETA_RES]);
         }
     }
+    flush_log();
 }
 
 void read_traj(const char *traj_fname,
@@ -520,6 +525,7 @@ void init_log(const char *logfile, int argc, char *argv[]) {
     fprintf(out_log, "\nRun: %d-%d-%d %d:%d:%d\n",
 		ltime->tm_mon + 1, ltime->tm_mday, ltime->tm_year + 1900,
 		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);
+    flush_log();
 }
 
 void close_log() {
@@ -536,6 +542,10 @@ void print_log(char const *fmt, ...) {
         vfprintf(out_log, fmt, arg);
         va_end(arg);
     }
+}
+
+void flush_log() {
+    fflush(out_log);
 }
 
 void log_fatal(int fatal_errno,

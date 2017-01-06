@@ -171,6 +171,10 @@ void print_log(char const *fmt, ...);
 /* Prints to both stdout and the logfile.
  */
 
+void flush_log();
+/* Flushes the logfile buffer.
+ */
+
 void log_fatal(int fatal_errno,
                const char *file,
                int line,
