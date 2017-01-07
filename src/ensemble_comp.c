@@ -198,7 +198,8 @@ void traj2svm_probs(rvec **x1,
                     struct svm_problem **probs) {
     int nvecs = nframes * 2;
     int i;
-    double *targets; // trajectory classification labels
+    double *targets = NULL; // trajectory classification labels
+    struct svm_node *xpool = NULL; // allocated memory for storing svm nodes (feature vectors)
 
     print_log("Constructing svm problems for %d atoms in %d frames...\n",
         natoms, nframes);
@@ -206,12 +207,18 @@ void traj2svm_probs(rvec **x1,
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
-    for (i = 0; i < nframes; ++i) {
-        targets[i] = LABEL1; // trajectory 1
+    if (targets) {
+        for (i = 0; i < nframes; ++i) {
+            targets[i] = LABEL1; // trajectory 1
+        }
+        for (; i < nvecs; ++i) {
+            targets[i] = LABEL2; // trajectory 2
+        }
     }
-    for (; i < nvecs; ++i) {
-        targets[i] = LABEL2; // trajectory 2
-    }
+
+    /* Allocate enough space for storing all svm node */
+    snew(xpool, 2 * natoms * nframes * 4);
+    // TODO use the pool
 
     /* Construct svm problems */
     snew(*probs, natoms);
