@@ -8,6 +8,7 @@
 - Added -nthreads option to set the number of threads to use at runtime.
 - Atom IDs are output next to eta values.
 - Shows progress while constructing svm problem structs (can take a long time for large trajectories).
+- Added functions for freeing svm data.
 - Added regression test.
 
 ## 2.0.1 - 2016-02-11
