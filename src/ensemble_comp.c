@@ -167,12 +167,15 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     calc_eta(models, eta_dat->natoms, nframes, eta_dat->eta);
 
     /* Clean up */
-    if (eta_dat->natoms > 0)
-        sfree(probs[0].y);
+    if (eta_dat->natoms > 0) {
+        sfree(probs[0].y); // Free target array
+        if (nframes > 0)
+            sfree(probs[0].x[0]); // The first atom's first frame's x points to the head of the node space
+    }
     for (i = 0; i < eta_dat->natoms; ++i) {
-        for (int j = 0; j < nframes * 2; ++j) {
-            sfree(probs[i].x[j]);
-        }
+        // for (int j = 0; j < nframes * 2; ++j) {
+        //     sfree(probs[i].x[j]);
+        // }
         sfree(probs[i].x);
     }
     sfree(probs);
@@ -199,7 +202,7 @@ void traj2svm_probs(rvec **x1,
     int nvecs = nframes * 2;
     int i;
     double *targets = NULL; // trajectory classification labels
-    struct svm_node *xpool = NULL; // allocated memory for storing svm nodes (feature vectors)
+    struct svm_node *nodepool = NULL; // allocated memory for storing svm nodes (feature vectors)
 
     print_log("Constructing svm problems for %d atoms in %d frames...\n",
         natoms, nframes);
@@ -216,9 +219,8 @@ void traj2svm_probs(rvec **x1,
         }
     }
 
-    /* Allocate enough space for storing all svm node */
-    snew(xpool, 2 * natoms * nframes * 4);
-    // TODO use the pool
+    /* Allocate enough space for storing all svm nodes */
+    snew(nodepool, 2 * natoms * nframes * 4);
 
     /* Construct svm problems */
     snew(*probs, natoms);
@@ -232,21 +234,25 @@ void traj2svm_probs(rvec **x1,
         snew((*probs)[cur_atom].x, nvecs);
         // Insert positions from traj1
         for (cur_frame = 0; cur_frame < nframes; ++cur_frame) {
-            snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
+            // snew((*probs)[cur_atom].x[cur_frame], 4); // (4 = 3 xyz pos + 1 for -1 end index)
+            (*probs)[cur_atom].x[cur_frame] = nodepool;
             for (i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_frame][i].index = i + 1; // Position components are indexed 1:x, 2:y, 3:z
                 (*probs)[cur_atom].x[cur_frame][i].value = x1[cur_frame][indx1[cur_atom]][i] * 10.0; // Scaling by 10 gives more accurate results
             }
             (*probs)[cur_atom].x[cur_frame][i].index = -1; // -1 index marks end of a data vector
+            nodepool += 4; // (3 nodes for xyz pos + 1 for -1 end index)
         }
         // Insert positions from traj2
         for (cur_frame = 0, cur_data = nframes; cur_frame < nframes; ++cur_frame, ++cur_data) {
-            snew((*probs)[cur_atom].x[cur_data], 4);
+            // snew((*probs)[cur_atom].x[cur_data], 4);
+            (*probs)[cur_atom].x[cur_data] = nodepool;
             for (i = 0; i < 3; ++i) {
                 (*probs)[cur_atom].x[cur_data][i].index = i + 1;
                 (*probs)[cur_atom].x[cur_data][i].value = x2[cur_frame][indx2[cur_atom]][i] * 10.0;
             }
             (*probs)[cur_atom].x[cur_data][i].index = -1;
+            nodepool += 4;
         }
     }
     printf("\n");
