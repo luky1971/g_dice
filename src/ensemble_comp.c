@@ -191,17 +191,17 @@ void traj2svm_probs(rvec **x1,
 
     /* Build targets array with classification labels */
     snew(targets, nvecs);
-    if (targets) {
-        for (i = 0; i < nframes; ++i) {
-            targets[i] = LABEL1; // trajectory 1
-        }
-        for (; i < nvecs; ++i) {
-            targets[i] = LABEL2; // trajectory 2
-        }
+    for (i = 0; i < nframes; ++i) {
+        targets[i] = LABEL1; // trajectory 1
+    }
+    for (; i < nvecs; ++i) {
+        targets[i] = LABEL2; // trajectory 2
     }
 
     /* Allocate enough space for storing all svm nodes */
     snew(nodepool, 2 * natoms * nframes * 4);
+    if (!nodepool)
+        log_fatal(FARGS, "Failed to allocate memory for svm training vectors!\n");
 
     /* Construct svm problems */
     snew(*probs, natoms);
@@ -411,6 +411,8 @@ void read_traj(const char *traj_fname,
         log_fatal(FARGS, "Failed to allocate memory for trajectory!\n");
 
     *natoms = read_first_x(*oenv, &status, traj_fname, &t, *x, box);
+    if (!status)
+        log_fatal(FARGS, "Failed to open trajectory!\n");
 
     do {
         ++(*nframes);
