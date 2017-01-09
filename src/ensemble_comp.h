@@ -113,6 +113,12 @@ void traj2svm_probs(rvec **x1,
  * that should be included in probs.
  */
 
+void free_trajsvm_probs(struct svm_problem *probs,
+                        int natoms,
+                        int nframes);
+/* Frees the memory allocated in traj2svm_probs.
+ */
+
 void train_traj(struct svm_problem *probs,
                 int num_probs,
                 real gamma,

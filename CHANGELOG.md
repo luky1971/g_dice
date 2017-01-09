@@ -3,10 +3,12 @@
 ## Unreleased
 - Added residue eta calculation (average eta per residue).
 - New struct-based API.
-- Added -nthreads option to set the number of threads to use at runtime.
+- Cache optimization of svm training data.
 - Fixed memory leaks in svm training.
+- Added -nthreads option to set the number of threads to use at runtime.
 - Atom IDs are output next to eta values.
 - Shows progress while constructing svm problem structs (can take a long time for large trajectories).
+- Added regression test.
 
 ## 2.0.1 - 2016-02-11
 - Added libdl to link stage which is necessary in some environments.

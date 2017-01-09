@@ -167,18 +167,7 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     calc_eta(models, eta_dat->natoms, nframes, eta_dat->eta);
 
     /* Clean up */
-    if (eta_dat->natoms > 0) {
-        sfree(probs[0].y); // Free target array
-        if (nframes > 0)
-            sfree(probs[0].x[0]); // The first atom's first frame's x points to the head of the node space
-    }
-    for (i = 0; i < eta_dat->natoms; ++i) {
-        // for (int j = 0; j < nframes * 2; ++j) {
-        //     sfree(probs[i].x[j]);
-        // }
-        sfree(probs[i].x);
-    }
-    sfree(probs);
+    free_trajsvm_probs(probs, eta_dat->natoms, nframes);
 
     for (i = 0; i < eta_dat->natoms; ++i) {
         svm_free_model_content(models[i]);
@@ -257,6 +246,20 @@ void traj2svm_probs(rvec **x1,
     }
     printf("\n");
     fflush(stdout);
+}
+
+void free_trajsvm_probs(struct svm_problem *probs,
+                        int natoms,
+                        int nframes) {
+    if (natoms > 0) {
+        sfree(probs[0].y); // Free target array
+        if (nframes > 0)
+            sfree(probs[0].x[0]); // The first atom's first frame's x points to the head of the node space
+    }
+    for (int i = 0; i < natoms; ++i) {
+        sfree(probs[i].x);
+    }
+    sfree(probs);
 }
 
 void train_traj(struct svm_problem *probs,
@@ -558,7 +561,8 @@ void print_log(char const *fmt, ...) {
 }
 
 void flush_log() {
-    fflush(out_log);
+    if (out_log != NULL)
+        fflush(out_log);
 }
 
 void log_fatal(int fatal_errno,
