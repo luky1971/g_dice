@@ -157,14 +157,14 @@ void ensemble_comp(eta_dat_t *eta_dat) {
 
     /* Train SVM */
     snew(models, eta_dat->natoms);
-    train_traj(probs, eta_dat->natoms, eta_dat->gamma, eta_dat->c, eta_dat->nthreads, models);
+    train_svm_probs(probs, eta_dat->natoms, eta_dat->gamma, eta_dat->c, eta_dat->nthreads, models);
 
     /* Calculate eta values */
     snew(eta_dat->eta, eta_dat->natoms);
     calc_eta(models, eta_dat->natoms, nframes, eta_dat->eta);
 
     /* Clean up svm stuff */
-    free_svm_probs(probs, eta_dat->natoms, nframes);
+    free_svm_probs(probs, eta_dat->natoms, nframes * 2);
     free_svm_models(models, eta_dat->natoms);
 
     /* If residue information given, calculate eta per residue */
@@ -241,25 +241,25 @@ void traj2svm_probs(rvec **x1,
 }
 
 void free_svm_probs(struct svm_problem *probs,
-                    int natoms,
-                    int nframes) {
-    if (natoms > 0) {
+                    int nprobs,
+                    int nvecs) {
+    if (nprobs > 0) {
         sfree(probs[0].y); // Free target array
-        if (nframes > 0)
+        if (nvecs > 0)
             sfree(probs[0].x[0]); // The first atom's first frame's x points to the head of the node space
     }
-    for (int i = 0; i < natoms; ++i) {
+    for (int i = 0; i < nprobs; ++i) {
         sfree(probs[i].x);
     }
     sfree(probs);
 }
 
-void train_traj(struct svm_problem *probs,
-                int num_probs,
-                real gamma,
-                real c,
-                int nthreads,
-                struct svm_model **models) {
+void train_svm_probs(struct svm_problem *probs,
+                     int num_probs,
+                     real gamma,
+                     real c,
+                     int nthreads,
+                     struct svm_model **models) {
     struct svm_parameter param; // Parameters used for training
 
     print_log("svm-training trajectory atoms with gamma = %f and C = %f...\n", gamma, c);
@@ -409,7 +409,7 @@ void read_traj(const char *traj_fname,
     snew(*x, est_frames);
     if (!*x)
         log_fatal(FARGS, "Failed to allocate memory for trajectory!\n");
-    
+
     *natoms = read_first_x(*oenv, &status, traj_fname, &t, *x, box);
 
     do {

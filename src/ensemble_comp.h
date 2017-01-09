@@ -114,17 +114,17 @@ void traj2svm_probs(rvec **x1,
  */
 
 void free_svm_probs(struct svm_problem *probs,
-                    int natoms,
-                    int nframes);
+                    int nprobs,
+                    int nvecs);
 /* Frees the memory allocated in traj2svm_probs.
  */
 
-void train_traj(struct svm_problem *probs,
-                int num_probs,
-                real gamma,
-                real c,
-                int nthreads,
-                struct svm_model **models);
+void train_svm_probs(struct svm_problem *probs,
+                     int num_probs,
+                     real gamma,
+                     real c,
+                     int nthreads,
+                     struct svm_model **models);
 /* Calls libsvm's svm_train function with default parameters and given gamma and c parameters.
  * You can use traj2svm_probs to generate svm_problems.
  * Results are stored in models.
@@ -134,7 +134,7 @@ void train_traj(struct svm_problem *probs,
  */
 
 void free_svm_models(struct svm_model **models, int num_models);
-/* Frees the memory allocated in train_traj.
+/* Frees the memory allocated in train_svm_probs.
  */
 
 void calc_eta(struct svm_model **models,
