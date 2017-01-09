@@ -113,9 +113,9 @@ void traj2svm_probs(rvec **x1,
  * that should be included in probs.
  */
 
-void free_trajsvm_probs(struct svm_problem *probs,
-                        int natoms,
-                        int nframes);
+void free_svm_probs(struct svm_problem *probs,
+                    int natoms,
+                    int nframes);
 /* Frees the memory allocated in traj2svm_probs.
  */
 
@@ -131,6 +131,10 @@ void train_traj(struct svm_problem *probs,
  * Memory for models must be pre-allocated as an array of pointers with length = num_probs.
  * nthreads is the number of threads to be used if ensemble_comp was built using openmp.
  * nthreads <= 0 will use all available threads.
+ */
+
+void free_svm_models(struct svm_model **models, int num_models);
+/* Frees the memory allocated in train_traj.
  */
 
 void calc_eta(struct svm_model **models,
@@ -159,6 +163,10 @@ void read_traj(const char *traj_fname,
                output_env_t *oenv);
 /* Reads a trajectory file. rvec **x is position coordinates indexed x[frame #][atom #]
  * 2D memory is allocated for x.
+ */
+
+void free_traj(rvec **x, int nframes);
+/* Frees the 2D memory allocated in read_traj.
  */
 
 /********************************************************

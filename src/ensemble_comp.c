@@ -22,6 +22,7 @@
 // The number of new frames by which to reallocate an array of length # trajectory frames
 #define FRAMESTEP 500
 
+static void free_svm_model(struct svm_model *model);
 static void eta_res_pdb(eta_dat_t *eta_dat);
 static void eta_res_tps(eta_dat_t *eta_dat);
 static void eta_res_tpx(eta_dat_t *eta_dat);
@@ -141,12 +142,8 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     traj2svm_probs(x1, x2, indx1[0], indx2[0], nframes, eta_dat->natoms, &probs);
 
     /* No longer need original vectors */
-    for (i = 0; i < nframes; ++i) {
-        sfree(x1[i]);
-        sfree(x2[i]);
-    }
-    sfree(x1);
-    sfree(x2);
+    free_traj(x1, nframes);
+    free_traj(x2, nframes);
 
     /* No longer need index junk (except for what we stored in atom_IDs) */
     sfree(isize);
@@ -166,14 +163,9 @@ void ensemble_comp(eta_dat_t *eta_dat) {
     snew(eta_dat->eta, eta_dat->natoms);
     calc_eta(models, eta_dat->natoms, nframes, eta_dat->eta);
 
-    /* Clean up */
-    free_trajsvm_probs(probs, eta_dat->natoms, nframes);
-
-    for (i = 0; i < eta_dat->natoms; ++i) {
-        svm_free_model_content(models[i]);
-        svm_free_and_destroy_model(&(models[i]));
-    }
-    sfree(models);
+    /* Clean up svm stuff */
+    free_svm_probs(probs, eta_dat->natoms, nframes);
+    free_svm_models(models, eta_dat->natoms);
 
     /* If residue information given, calculate eta per residue */
     if (eta_dat->fnames[eRES1] != NULL) {
@@ -248,9 +240,9 @@ void traj2svm_probs(rvec **x1,
     fflush(stdout);
 }
 
-void free_trajsvm_probs(struct svm_problem *probs,
-                        int natoms,
-                        int nframes) {
+void free_svm_probs(struct svm_problem *probs,
+                    int natoms,
+                    int nframes) {
     if (natoms > 0) {
         sfree(probs[0].y); // Free target array
         if (nframes > 0)
@@ -305,6 +297,19 @@ void train_traj(struct svm_problem *probs,
         models[i] = svm_train(&(probs[i]), &param);
     }
 }
+
+static void free_svm_model(struct svm_model *model) {
+    svm_free_model_content(model);
+    svm_free_and_destroy_model(&model);
+}
+
+void free_svm_models(struct svm_model **models, int num_models) {
+    for (int i = 0; i < num_models; ++i) {
+        free_svm_model(models[i]);
+    }
+    sfree(models);
+}
+
 
 void calc_eta(struct svm_model **models,
               int num_models,
@@ -419,6 +424,13 @@ void read_traj(const char *traj_fname,
 
     sfree((*x)[*nframes]);
     close_trx(status);
+}
+
+void free_traj(rvec **x, int nframes) {
+    for (int i = 0; i < nframes; ++i) {
+        sfree(x[i]);
+    }
+    sfree(x);
 }
 
 static void eta_res_pdb(eta_dat_t *eta_dat) {
