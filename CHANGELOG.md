@@ -1,9 +1,9 @@
 # Change Log
 
-## Unreleased
+## 3.0.0 - 2017-01-08
 - Added residue eta calculation (average eta per residue).
 - New struct-based API.
-- Cache optimization of svm training data.
+- Cache optimized svm training data (svm problems structs).
 - Fixed memory leaks in svm training.
 - Added -nthreads option to set the number of threads to use at runtime.
 - Atom IDs are output next to eta values.
