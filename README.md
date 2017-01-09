@@ -67,7 +67,7 @@ You will also need to make sure that `CC` and `CXX` are set to the C compiler an
 $ sudo make install CC=gcc CXX=g++
 ```
 
-If you want to build without OpenMP, set `PARALLEL=0`. You can also add compilation flags by setting `CFLAGS`, and linker flags/libraries by setting `LIBS`- for example, if you set `LIBS=-static` to statically link g_ensemble_comp's dependencies, you can then run the same binary in a different environment without the same C runtime or Gromacs library present.
+If you want to build without OpenMP, set `PARALLEL=0`. You can also add compilation flags by setting `CFLAGS`, and linker flags/libraries by setting `LIBS`. For example, if you set `LIBS=-static` to statically link g_ensemble_comp's dependencies, you can then run the same binary in a different environment without the same C runtime or Gromacs library present.
 
 ### USAGE
 
