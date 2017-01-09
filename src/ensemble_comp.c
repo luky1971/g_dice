@@ -407,7 +407,10 @@ void read_traj(const char *traj_fname,
     print_log("Reading trajectory %s...\n", traj_fname);
 
     snew(*x, est_frames);
-    *natoms = read_first_x(*oenv, &status, traj_fname, &t, &((*x)[0]), box);
+    if (!*x)
+        log_fatal(FARGS, "Failed to allocate memory for trajectory!\n");
+    
+    *natoms = read_first_x(*oenv, &status, traj_fname, &t, *x, box);
 
     do {
         ++(*nframes);
@@ -416,6 +419,10 @@ void read_traj(const char *traj_fname,
             srenew(*x, est_frames);
         }
         snew((*x)[*nframes], *natoms);
+
+        if (!(*x)[*nframes]) {
+            log_fatal(FARGS, "Failed to allocate memory at frame %d!\n", *nframes);
+        }
     } while(read_next_x(*oenv, status, &t,
 #ifndef GRO_V5
         *natoms,
