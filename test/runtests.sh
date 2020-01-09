@@ -14,10 +14,12 @@ rm -f eta_atom_all.dat
 rm -f eta_atom_grp1.dat
 
 # All atoms
-g_ensemble_comp -f1 ../tutor/PDZ2_frag_apo.pdb -f2 ../tutor/PDZ2_frag_bound.pdb -eta_atom eta_atom_all.dat
+g_dice -f1 ../tutor/PDZ2_frag_apo.pdb -f2 ../tutor/PDZ2_frag_bound.pdb -eta_atom eta_atom_all.dat
 
 # Index group 1
-g_ensemble_comp -f1 ../tutor/PDZ2_frag_apo.pdb -n1 ../tutor/PDZ2_frag_apo.ndx -f2 ../tutor/PDZ2_frag_bound.pdb -n2 ../tutor/PDZ2_frag_bound.ndx -eta_atom eta_atom_grp1.dat <<< "11"
+g_dice -f1 ../tutor/PDZ2_frag_apo.pdb -n1 ../tutor/PDZ2_frag_apo.ndx -f2 ../tutor/PDZ2_frag_bound.pdb -n2 ../tutor/PDZ2_frag_bound.ndx -eta_atom eta_atom_grp1.dat <<< "1
+1
+"
 
 if [[ $(diff eta_atom_all.dat exp_eta_atom_all.dat) ]]; then
     echo -e "${RED}Test case all atoms failed"

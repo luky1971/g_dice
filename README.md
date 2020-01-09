@@ -1,6 +1,6 @@
-### g_ensemble_comp
+### g_dice
 
-g_ensemble_comp evaluates the difference between two conformational
+g_dice evaluates the difference between two conformational
 ensembles, R and R'. Quanitification is in terms of a true metric that
 satisfies the conditions set forth by the zeroth law of thermodynamics. The
 quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized,
@@ -34,7 +34,7 @@ Kernel (gamma=0.4) and the maximum value that can be taken up by the
 Lagrange multiplier (C=100.0). The values of C and gamma can be changed with `-c` and `-g`,
 but such changes may increase mean absolute error (MAE=3.26%) of the method.
 
-By default, g_ensemble_comp is parallelized with OpenMP (see installation instructions below).
+By default, g_dice is parallelized with OpenMP (see installation instructions below).
 To set the number of threads at runtime, set `-nthreads X` where X is the number of threads to use. The default behavior is to use the maximum number of cores available.
 
 Methodoligical details and example applications can be found in
@@ -48,7 +48,7 @@ The following instructions are for unix-based operating systems such as OSX and 
 
 1. Install Gromacs version 4.5.x or later from http://www.gromacs.org.
 
-2. `git clone` or otherwise obtain and `cd` to the 'g_ensemble_comp' repository.
+2. `git clone` or otherwise obtain and `cd` to the 'g_dice' repository.
 
 3. Run `sudo make install` with the necessary arguments for your environment (see below).
 
@@ -59,7 +59,7 @@ $ sudo make install VGRO=4 GROMACS=/home/user/tools/gromacs-4.5.3
 ```
 
 If you must run `make install` without sudo privileges, you will need to set the `INSTALL` variable to a path that you can write to.
-The default install path is /usr/local/bin. Depending on your system and chosen installation directory, you may have to add g_ensemble_comp to your PATH.
+The default install path is /usr/local/bin. Depending on your system and chosen installation directory, you may have to add g_dice to your PATH.
 
 You will also need to make sure that `CC` and `CXX` are set to the C compiler and C++ compiler commands, respectively, that were used to compile your installation of Gromacs. For example, if your environment's default compiler is clang, but you used gcc to compile Gromacs, you would run the following:
 
@@ -67,21 +67,21 @@ You will also need to make sure that `CC` and `CXX` are set to the C compiler an
 $ sudo make install CC=gcc CXX=g++
 ```
 
-If you want to build without OpenMP, set `PARALLEL=0`. You can also add compilation flags by setting `CFLAGS`, and linker flags/libraries by setting `LIBS`. For example, if you set `LIBS=-static` to statically link g_ensemble_comp's dependencies, you can then run the same binary in a different environment without the same C runtime or Gromacs library present.
+If you want to build without OpenMP, set `PARALLEL=0`. You can also add compilation flags by setting `CFLAGS`, and linker flags/libraries by setting `LIBS`. For example, if you set `LIBS=-static` to statically link g_dice's dependencies, you can then run the same binary in a different environment without the same C runtime or Gromacs library present.
 
 ### USAGE
 
 ``` bash
-$ g_ensemble_comp -f1 traj1.xtc -f2 traj2.xtc
+$ g_dice -f1 traj1.xtc -f2 traj2.xtc
 ```
 
-Run `g_ensemble_comp -h` to get detailed usage instructions. The instructions are also provided in the introductory paragraph above as well as the tutor directory.
+Run `g_dice -h` to get detailed usage instructions. The instructions are also provided in the introductory paragraph above as well as the tutor directory.
 
 ### Copyright
 (c) 2017 Ahnaf Siddiqui, Mohsen Botlani and Sameer Varma  
 The code uses SVM libraries: LIBSVM copyright 2000-2014 Chih-Chung Chang and Chih-Jen Lin.
 
-g_ensemble_comp uses the GROMACS molecular simulation package API.  
+g_dice uses the GROMACS molecular simulation package API.  
 Copyright (c) 1991-2000, University of Groningen, The Netherlands.  
 Copyright (c) 2001-2004, The GROMACS development team.  
 Copyright (c) 2013,2014, by the GROMACS development team,  

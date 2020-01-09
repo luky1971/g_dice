@@ -38,20 +38,20 @@ endif
 
 .PHONY: install clean
 
-$(BUILD)/g_ensemble_comp: $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o
+$(BUILD)/g_dice: $(BUILD)/g_dice.o $(BUILD)/ensemble_comp.o
 	make svm.o -C $(SVM) \
-	&& $(CXX) $(CFLAGS) -o $(BUILD)/g_ensemble_comp $(BUILD)/g_ensemble_comp.o $(BUILD)/ensemble_comp.o \
+	&& $(CXX) $(CFLAGS) -o $(BUILD)/g_dice $(BUILD)/g_dice.o $(BUILD)/ensemble_comp.o \
 	$(SVM)/svm.o $(LINKGRO) $(LIBGRO) $(LIBS)
 
-install: $(BUILD)/g_ensemble_comp
-	install $(BUILD)/g_ensemble_comp $(INSTALL)
+install: $(BUILD)/g_dice
+	install $(BUILD)/g_dice $(INSTALL)
 
-$(BUILD)/g_ensemble_comp.o: $(SRC)/g_ensemble_comp.c $(SRC)/ensemble_comp.h
-	$(CC) $(CFLAGS) -o $(BUILD)/g_ensemble_comp.o -c $(SRC)/g_ensemble_comp.c $(DEFV5) $(INCGRO) -I$(SVM)
+$(BUILD)/g_dice.o: $(SRC)/g_dice.c $(SRC)/ensemble_comp.h
+	$(CC) $(CFLAGS) -o $(BUILD)/g_dice.o -c $(SRC)/g_dice.c $(DEFV5) $(INCGRO) -I$(SVM)
 
 $(BUILD)/ensemble_comp.o: $(SRC)/ensemble_comp.c $(SRC)/ensemble_comp.h
 	$(CC) $(CFLAGS) -o $(BUILD)/ensemble_comp.o -c $(SRC)/ensemble_comp.c $(DEFV5) $(INCGRO) -I$(SVM)
 
 clean:
 	make clean -C $(SVM) \
-	&& rm -f $(BUILD)/*.o $(BUILD)/g_ensemble_comp
+	&& rm -f $(BUILD)/*.o $(BUILD)/g_dice

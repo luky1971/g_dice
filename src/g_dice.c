@@ -8,7 +8,7 @@
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed at http://www.gromacs.org.
 
- * g_ensemble_comp quantifies the difference between two conformational ensembles (two trajectory files)
+ * g_dice quantifies the difference between two conformational ensembles (two trajectory files)
  * Quantification is in terms of a true metric, eta=1-Overlap
  * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875.
  */
@@ -17,7 +17,7 @@
 
 int main(int argc, char *argv[]) {
     const char *desc[] = {
-        "g_ensemble_comp evaluates the difference between two conformational ensembles, R and R'.",
+        "g_dice evaluates the difference between two conformational ensembles, R and R'.",
         "Quanitification is in terms of a true metric that satisfies the conditions set forth by the zeroth law of thermodynamics.",
         "The quantification metric eta=1-|Overlap|=|R'|-|Overlap|=DeltaR is normalized, that is, 0<=eta<1,",
         "and takes up a value closer to unity as the difference between the ensembles increases.",
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         "the maximum value that can be taken up by the Lagrange multiplier (C=100.0).",
         "The values of C and gamma can be changed with -c and -g,",
         "but such changes may increase mean absolute error (MAE=3.26%) of the method.\n",
-        "If g_ensemble_comp was built with OPENMP, you can set the number of threads to use with -nthreads X,\n",
+        "If g_dice was built with OPENMP, you can set the number of threads to use with -nthreads X,\n",
         "where X is the number of threads to use. The default behavior is to use the maximum number of cores available.\n\n",
         "Methodoligical details and example applications can be found in\n",
         "Leighty and Varma, JCTC, 2013, 9: 868-875.\n",

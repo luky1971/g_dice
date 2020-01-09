@@ -8,7 +8,7 @@
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed at http://www.gromacs.org.
 
- * g_ensemble_comp quantifies the difference between two conformational ensembles (two trajectory files)
+ * g_dice quantifies the difference between two conformational ensembles (two trajectory files)
  * Quantification is in terms of a true metric, eta=1-Overlap
  * Leighty and Varma, Quantifying Changes in Intrinsic Molecular Motion Using Support Vector Machines, J. Chem. Theory Comput. 2013, 9, 868-875.
  */
